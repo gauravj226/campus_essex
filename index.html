@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Essex Campus Navigator - Humanised Wayfinding</title>
+    <meta name="description" content="Intelligent campus navigation for University of Essex with conversational search, accessibility routing, and personalized wayfinding.">
+    
+    <!-- MazeMap CSS & JS -->
+    <link rel="stylesheet" href="https://api.mazemap.com/js/v2.0.118/mazemap.min.css">
+    <script src="https://api.mazemap.com/js/v2.0.118/mazemap.min.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00467F">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+</head>
+<body>
+    <!-- Accessibility Skip Link -->
+    <a href="#map" class="skip-link">Skip to map</a>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="header-content">
+            <h1>🎓 Essex Navigator</h1>
+            <div class="header-actions">
+                <button id="accessibility-toggle" class="icon-btn" aria-label="Toggle accessibility mode" title="Accessible routing">
+                    <span class="icon">♿</span>
+                </button>
+                <button id="favourites-toggle" class="icon-btn" aria-label="View favourites" title="Favourites">
+                    <span class="icon">⭐</span>
+                </button>
+                <button id="help-toggle" class="icon-btn" aria-label="Help & Tour" title="Take a tour">
+                    <span class="icon">❓</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Search Bar -->
+    <div class="search-container">
+        <div class="search-wrapper">
+            <input 
+                type="text" 
+                id="search-input" 
+                class="search-input" 
+                placeholder="Where do you want to go? (e.g., 'library', 'computer lab', 'nearest coffee')" 
+                aria-label="Search campus locations"
+                autocomplete="off"
+            >
+            <button id="search-btn" class="search-btn" aria-label="Search">
+                <span class="icon">🔍</span>
+            </button>
+        </div>
+        <div id="search-results" class="search-results" role="listbox" aria-label="Search results"></div>
+    </div>
+
+    <!-- Map Container -->
+    <main id="map" class="map-container" role="main" aria-label="Campus map"></main>
+
+    <!-- Chat Widget -->
+    <div id="chat-widget" class="chat-widget">
+        <div class="chat-header">
+            <span class="chat-title">💬 Ask me anything</span>
+            <button id="chat-close" class="chat-close-btn" aria-label="Close chat">×</button>
+        </div>
+        <div id="chat-messages" class="chat-messages" role="log" aria-live="polite"></div>
+        <div class="chat-input-container">
+            <input 
+                type="text" 
+                id="chat-input" 
+                class="chat-input" 
+                placeholder="Ask about buildings, routes, facilities..." 
+                aria-label="Chat message input"
+            >
+            <button id="chat-send" class="chat-send-btn" aria-label="Send message">Send</button>
+        </div>
+    </div>
+
+    <!-- Chat Toggle Button -->
+    <button id="chat-toggle" class="chat-toggle-btn" aria-label="Open chat assistant">
+        💬
+    </button>
+
+    <!-- Favourites Panel -->
+    <div id="favourites-panel" class="favourites-panel">
+        <div class="panel-header">
+            <h2>Your Favourites</h2>
+            <button id="favourites-close" class="panel-close-btn" aria-label="Close favourites">×</button>
+        </div>
+        <div id="favourites-list" class="favourites-list">
+            <p class="empty-message">No favourites yet. Save locations by clicking the star icon on search results.</p>
+        </div>
+    </div>
+
+    <!-- Route Info Panel -->
+    <div id="route-info" class="route-info">
+        <div class="route-header">
+            <h3>Route Details</h3>
+            <button id="route-close" class="panel-close-btn" aria-label="Close route">×</button>
+        </div>
+        <div id="route-content" class="route-content"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+    <!-- Scripts -->
+    <script src="js/app.js" type="module"></script>
+    <script src="js/chat.js" type="module"></script>
+    <script src="js/favourites.js" type="module"></script>
+    <script src="js/accessibility.js" type="module"></script>
+    <script src="js/onboarding.js" type="module"></script>
+    
+    <!-- Service Worker for PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('✅ Service Worker registered'))
+                    .catch(err => console.log('❌ SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
