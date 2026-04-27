@@ -225,31 +225,30 @@ class NavigationController {
   }
 
   async calculateRoute(fromLngLat, toLngLat) {
-    if (!this.pathfinder) return this.buildDirectFallbackRoute(fromLngLat, toLngLat);
-
     const from = normalizePoint(fromLngLat);
     const to = normalizePoint(toLngLat);
     if (!from || !to) return [];
 
     const accessible = Boolean(this.getAccessibilityMode?.());
 
-    const candidates = [
-      () => this.pathfinder.getRoute({ from, to, accessible }),
-      () => this.pathfinder.getRoute(from, to, { accessible }),
-      () => this.pathfinder.findPath(from, to, { accessible }),
-      () => this.pathfinder.route({ from, to, accessible }),
-      () => this.pathfinder.findPath({ from, to, accessible }),
-      () => this.pathfinder.getPath?.(from, to, { accessible })
-    ];
+    try {
+      // In Mazemap JS SDK v2, the recommended way is using Mazemap.Data.getPoiRoute
+      // or map.getRoute if available.
+      let rawRoute;
+      if (typeof Mazemap !== 'undefined' && Mazemap.Data && Mazemap.Data.getRoute) {
+        rawRoute = await Mazemap.Data.getRoute(from, to, { accessible });
+      } else if (this.map && this.map.getRoute) {
+        rawRoute = await this.map.getRoute(from, to, { accessible });
+      } else if (this.pathfinder && typeof this.pathfinder.getRoute === 'function') {
+        rawRoute = await this.pathfinder.getRoute(from, to, { accessible });
+      }
 
-    for (const resolver of candidates) {
-      try {
-        const rawRoute = await resolver();
+      if (rawRoute) {
         const normalized = normalizeRoutePoints(rawRoute);
         if (normalized.length > 1) return normalized;
-      } catch (error) {
-        // Try next method signature.
       }
+    } catch (error) {
+      console.warn('Routing API error, falling back to direct route:', error);
     }
 
     return this.buildDirectFallbackRoute(fromLngLat, toLngLat);

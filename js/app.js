@@ -87,6 +87,27 @@ function initMap() {
       pitch: 0
     });
 
+    // Address deprecation warning for setLight
+    if (map.setLights && !map.setLight) {
+        // Already using modern API or setLight is gone
+    } else if (map.setLight) {
+        const originalSetLight = map.setLight.bind(map);
+        map.setLight = (options) => {
+            if (map.setLights) {
+                map.setLights([{
+                    id: 'flat',
+                    type: 'flat',
+                    properties: {
+                        color: options.color || '#ffffff',
+                        intensity: options.intensity || 1
+                    }
+                }]);
+            } else {
+                originalSetLight(options);
+            }
+        };
+    }
+
     map.addControl(new Mazemap.mapboxgl.NavigationControl());
     map.addControl(new Mazemap.mapboxgl.GeolocateControl({
       positionOptions: { enableHighAccuracy: true },
@@ -103,7 +124,9 @@ function initMap() {
         outlineColor: '#00467F'
       });
 
-      pathfinder = new Mazemap.Pathfinder(map);
+      // In v2.2.6, Mazemap.Pathfinder is not a constructor.
+      // We use the map instance or Mazemap.Data for routing now.
+      pathfinder = map;
       ensureNavigationController();
 
       window.showToast('Campus map loaded! Search for any location.', 'success');
