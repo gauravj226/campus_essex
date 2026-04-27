@@ -740,8 +740,7 @@ body{
 
 /* Search Results */
 #search-results {
-  position: absolute; top: calc(100% + 8px); left: 0; right: 0;
-  background: #fff; border-radius: 8px; box-shadow: var(--shadow);
+  position: absolute; top: calc(100% + 8px); right: 20px; width: 420px;  background: #fff; border-radius: 8px; box-shadow: var(--shadow);
   max-height: 400px; overflow-y: auto; z-index: 1500; display: none;
 }
 #search-results.active { display: block; }
