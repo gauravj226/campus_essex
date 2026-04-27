@@ -134,13 +134,18 @@
   </div>
 
   <!-- Scripts -->
-    <script>
-    var myMap = new Mazemap.Map({container: 'mazemap-container', campuses: 2195});
-    myMap.on('click', function(e){
-      myMap.flyTo({center:e.lngLat, zoom: 18});
+  <script>
+    window.addEventListener('load', function() {
+      if (typeof Mazemap !== 'undefined') {
+        var myMap = new Mazemap.Map({container: 'mazemap-container', campuses: 2195});
+        myMap.on('click', function(e){
+          myMap.flyTo({center:e.lngLat, zoom: 18});
+        });
+        console.log('✅ MazeMap initialized successfully');
+      } else {
+        console.error('❌ MazeMap library not loaded');
+      }
     });
-  </script>
-56
   
   <script src="js/app.js" type="module"></script>
   <script src="js/chat.js" type="module"></script>
