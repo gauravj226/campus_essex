@@ -6,16 +6,14 @@
   <title>Essex Campus Navigator - Humanised Wayfinding</title>
   <meta name="description" content="Intelligent campus navigation for University of Essex with conversational search, accessibility routing, and personalized wayfinding.">
 
-  <!-- MazeMap CSS & JS (latest stable) -->
-  <!-- Custom CSS -->
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="https://api.mazemap.com/js/v2.2.6/mazemap.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="https://api.mazemap.com/js/v2.2.6/mazemap.min.css">
   <script type="text/javascript" src="https://api.mazemap.com/js/v2.2.6/mazemap.min.js"></script>
+</head>
+<body>
 
-  <!-- Accessibility Skip Link -->
   <a href="#map" class="skip-link">Skip to map</a>
 
-  <!-- Header -->
   <header class="app-header">
     <div class="header-content">
       <h1>&#127979; Essex Navigator</h1>
@@ -33,7 +31,6 @@
     </div>
   </header>
 
-  <!-- Search Bar -->
   <div class="search-container">
     <div class="search-wrapper">
       <input
@@ -51,12 +48,13 @@
     <div id="search-results" class="search-results" role="listbox" aria-label="Search results"></div>
   </div>
 
-  <!-- Map Container -->
   <div class="map-container">
-        <div id="map" style="width: 100%; height: 100%;"></div>  ></div>
+    <div id="map" style="width: 100%; height: 100%;"></div>
+  </div>
 
-  <!-- Chat Panel -->
-    <div id="map" style="width: 100%; height: 100%;"></div>    <div class="chat-header">
+  <div id="chat-widget" class="chat-widget">
+    <div class="chat-header">
+      <span class="chat-title">Campus Assistant</span>
       <button id="chat-close" class="panel-close-btn" aria-label="Close chat">&#215;</button>
     </div>
     <div id="chat-messages" class="chat-messages"></div>
@@ -66,12 +64,10 @@
     </div>
   </div>
 
-  <!-- Chat Toggle Button -->
   <button id="chat-toggle" class="chat-toggle-btn" aria-label="Open chat assistant">
     &#128172;
   </button>
 
-  <!-- Favourites Panel -->
   <div id="favourites-panel" class="favourites-panel">
     <div class="panel-header">
       <h2>Your Favourites</h2>
@@ -82,7 +78,6 @@
     </div>
   </div>
 
-  <!-- Route Info Panel -->
   <div id="route-info" class="route-info">
     <div class="route-header">
       <h3>Route Details</h3>
@@ -91,15 +86,12 @@
     <div id="route-content" class="route-content"></div>
   </div>
 
-  <!-- Accessibility Banner -->
   <div id="accessibility-banner" class="accessibility-banner">
     &#9855; Accessibility mode: Step-free routes prioritised
   </div>
 
-  <!-- Toast Notifications -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <!-- Onboarding Modal -->
   <div id="onboarding-modal" class="modal-overlay">
     <div class="modal-box">
       <div class="onboarding-progress">

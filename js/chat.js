@@ -1,7 +1,7 @@
 // Essex Campus Navigator - js/chat.js
 // Conversational AI chatbot with built-in Essex campus knowledge
 
-import { navigateToPOI, showToast } from './app.js';
+import { showToast } from './app.js';
 
 const CAMPUS_ID = 2195;
 
@@ -57,21 +57,22 @@ const CAMPUS_KB = {
   }
 };
 
-// Toggle chat widget
-chatToggle.addEventListener('click', () => {
-  chatWidget.classList.toggle('active');
-  if (chatWidget.classList.contains('active') && chatMessages.children.length === 0) {
-    addBotMessage(getWelcomeMessage());
-  }
-  chatInput.focus();
-});
+if (chatToggle && chatWidget && chatClose && chatMessages && chatInput && chatSend) {
+  chatToggle.addEventListener('click', () => {
+    chatWidget.classList.toggle('active');
+    if (chatWidget.classList.contains('active') && chatMessages.children.length === 0) {
+      addBotMessage(getWelcomeMessage());
+    }
+    chatInput.focus();
+  });
 
-chatClose.addEventListener('click', () => chatWidget.classList.remove('active'));
+  chatClose.addEventListener('click', () => chatWidget.classList.remove('active'));
 
-chatSend.addEventListener('click', sendMessage);
-chatInput.addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-});
+  chatSend.addEventListener('click', sendMessage);
+  chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+}
 
 // Welcome message based on time
 function getWelcomeMessage() {

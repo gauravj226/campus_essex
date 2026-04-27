@@ -9,6 +9,7 @@ let highlighter = null;
 let pathfinder = null;
 let accessibilityMode = false;
 let searchMarkers = []; // Track search result markers
+let currentUserLngLat = null;
 
 // Make showToast globally available for other modules
 window.showToast = function(msg, type = 'info', duration = 3500) {
@@ -67,6 +68,7 @@ function initMap() {
         (position) => {
           const { latitude, longitude, accuracy, heading } = position.coords;
           const lngLat = [longitude, latitude];
+          currentUserLngLat = lngLat;
           
           // Update or create user marker
           if (!userMarker) {
@@ -174,6 +176,7 @@ function renderResults(pois, query) {
   container.querySelectorAll('.result-item').forEach(item => {
     item.addEventListener('click', (e) => {
       if (e.target.classList.contains('result-fav')) return;
+      container.classList.remove('active');
       const poiId = parseInt(item.dataset.poiId);
       const name = item.dataset.name;
       if (poiId) navigateToPOI(poiId, name);
@@ -192,7 +195,7 @@ function renderResults(pois, query) {
   container.classList.add('active');
 }
 
-async function navigateToPOI(poiId, name) {
+export async function navigateToPOI(poiId, name) {
   if (!map || !highlighter) return;
   try {
     const poi = await Mazemap.Data.getPoi(poiId);
@@ -253,10 +256,55 @@ function showRouteInfo(poi, name) {
 
   panel.classList.add('active');
 
-  document.getElementById('start-route-btn')?.addEventListener('click', async () => {
-    if (!pathfinder) return;
-    window.showToast('Routing feature requires user location. Enable location access.', 'info');
+  document.getElementById('start-route-btn')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    const originalText = button.textContent;
+    button.textContent = 'Loading directions...';
+    try {
+      const lngLat = Mazemap.Util.getPoiLngLat(poi);
+      const destination = {
+        lat: lngLat.lat ?? lngLat[1],
+        lng: lngLat.lng ?? lngLat[0]
+      };
+      await openDirections(destination, name || props.title || 'Destination');
+    } finally {
+      button.disabled = false;
+      button.textContent = originalText;
+    }
   });
+}
+
+function getCurrentLocation() {
+  if (currentUserLngLat) {
+    return Promise.resolve({ lat: currentUserLngLat[1], lng: currentUserLngLat[0] });
+  }
+
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) {
+      reject(new Error('Geolocation unavailable'));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => resolve({ lat: coords.latitude, lng: coords.longitude }),
+      reject,
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+    );
+  });
+}
+
+async function openDirections(destination, label) {
+  try {
+    const origin = await getCurrentLocation();
+    const navUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin.lat},${origin.lng}&destination=${destination.lat},${destination.lng}&travelmode=walking`;
+    window.open(navUrl, '_blank', 'noopener,noreferrer');
+    window.showToast(`Opening directions to ${label}`, 'success');
+  } catch (error) {
+    const navUrl = `https://www.google.com/maps/search/?api=1&query=${destination.lat},${destination.lng}`;
+    window.open(navUrl, '_blank', 'noopener,noreferrer');
+    window.showToast('Location unavailable. Opened destination in maps.', 'info');
+  }
 }
 
 function setupSearch() {
@@ -310,17 +358,6 @@ function setupSearch() {
 }
 
 function setupPanels() {
-  // Chat toggle
-  const chatToggle = document.getElementById('chat-toggle');
-  const chatPanel = document.getElementById('chat-panel');
-  const chatClose = document.getElementById('chat-close');
-  if (chatToggle && chatPanel) {
-    chatToggle.addEventListener('click', () => chatPanel.classList.toggle('active'));
-  }
-  if (chatClose && chatPanel) {
-    chatClose.addEventListener('click', () => chatPanel.classList.remove('active'));
-  }
-
   // Favourites toggle
   const favToggle = document.getElementById('favourites-toggle');
   const favPanel = document.getElementById('favourites-panel');

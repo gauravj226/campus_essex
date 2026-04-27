@@ -687,10 +687,20 @@ body{
 
 /* Accessibility Banner */
 .accessibility-banner {
-  position: fixed; top: 60px; left: 0; right: 0;
-  background: var(--essex-orange); color: #fff;
-  padding: 8px 20px; text-align: center; font-size: 0.9rem;
-  z-index: 999; display: none;
+  position: fixed;
+  bottom: 90px;
+  left: 20px;
+  right: auto;
+  top: auto;
+  background: var(--essex-blue);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  text-align: left;
+  z-index: 996;
+  display: none;
+  pointer-events: none;
 }
 .accessibility-banner.active { display: block; }
 
