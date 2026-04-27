@@ -398,12 +398,8 @@ body{
 }
 .route-info{
     position:fixed;
-    bottom:20px;
-    left:50%;
-    transform:translateX(-50%);
-    width:calc(100% - 40px);
-    max-width:580px;
-    background:#fff;
+  bottom:20px; left:20px;  
+  width:320px;
     border-radius:13px;
     box-shadow:var(--shadow-lg);
     display:none;
