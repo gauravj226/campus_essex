@@ -177,7 +177,16 @@ class NavigationController {
   }
 
   async previewRouteToPoi({ poi, destinationName }) {
-    const plan = await this.createRoutePlanToPoi({ poi, destinationName });
+    let plan = null;
+    try {
+      plan = await this.createRoutePlanToPoi({ poi, destinationName });
+    } catch (error) {
+      plan = null;
+    }
+
+    if (!plan) {
+      plan = this.buildSimpleFallbackPlan({ poi, destinationName });
+    }
     if (!plan) return null;
 
     this.previewPlan = plan;
@@ -652,22 +661,79 @@ class NavigationController {
   }
 
   drawPreviewRoute(routePoints) {
-    this.ensurePreviewLayer();
-    const source = this.map?.getSource(PREVIEW_SOURCE_ID);
-    if (!source) return;
-    source.setData({
-      type: 'FeatureCollection',
-      features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: routePoints || [] } }]
-    });
+    try {
+      this.ensurePreviewLayer();
+      const source = this.map?.getSource(PREVIEW_SOURCE_ID);
+      if (!source) return;
+      source.setData({
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: routePoints || [] } }]
+      });
+    } catch (error) {
+      // Keep UI functional even if line drawing fails once.
+    }
   }
 
   clearPreviewRoute() {
-    const source = this.map?.getSource(PREVIEW_SOURCE_ID);
-    if (!source) return;
-    source.setData({
-      type: 'FeatureCollection',
-      features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }]
-    });
+    try {
+      const source = this.map?.getSource(PREVIEW_SOURCE_ID);
+      if (!source) return;
+      source.setData({
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }]
+      });
+    } catch (error) {
+      // no-op
+    }
+  }
+
+  buildSimpleFallbackPlan({ poi, destinationName }) {
+    const destination = this.extractPoiLngLat(poi);
+    if (!destination) return null;
+
+    const center = this.map?.getCenter?.();
+    const from = this.getCurrentUserLngLat?.() || (center ? [center.lng, center.lat] : null);
+    if (!from) return null;
+
+    const routePoints = this.buildDirectFallbackRoute(from, destination);
+    if (!routePoints.length) return null;
+
+    const name = destinationName || poi?.properties?.title || 'Destination';
+    let instructions = this.buildHumanizedInstructions(routePoints, name, poi);
+    if (!instructions.length) {
+      instructions = [
+        {
+          index: 0,
+          point: from,
+          text: `Head towards ${name}. Follow the highlighted path.`,
+          turnType: 'straight',
+          segmentDistance: cumulativeDistanceMeters(routePoints),
+          etaMinutes: estimateWalkTimeMinutes(cumulativeDistanceMeters(routePoints)),
+          landmark: null
+        },
+        {
+          index: 1,
+          point: destination,
+          text: this.composeArrivalInstruction(name, poi, null),
+          turnType: 'arrive',
+          segmentDistance: 0,
+          etaMinutes: 0,
+          landmark: null
+        }
+      ];
+    }
+
+    const distanceMeters = cumulativeDistanceMeters(routePoints);
+    const etaMinutes = estimateWalkTimeMinutes(distanceMeters);
+
+    return {
+      from,
+      destination: { name, lngLat: destination, poi },
+      routePoints,
+      instructions,
+      distanceMeters,
+      etaMinutes
+    };
   }
 
   renderRoute() {

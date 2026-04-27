@@ -365,14 +365,27 @@ function showDestinationDirectionsCard(targetLngLat, poi, name) {
 async function previewRoute(poi, name) {
   ensureNavigationController();
   if (!navigationController) return;
-
-  const plan = await navigationController.previewRouteToPoi({
-    poi,
-    destinationName: name || poi?.properties?.title || 'Destination'
-  });
+  let plan = null;
+  try {
+    plan = await navigationController.previewRouteToPoi({
+      poi,
+      destinationName: name || poi?.properties?.title || 'Destination'
+    });
+  } catch (error) {
+    plan = null;
+  }
 
   if (!plan) {
     showToast('Could not prepare route preview.', 'error');
+    const content = document.getElementById('route-content');
+    if (content) {
+      content.innerHTML = `
+        <div class="preview-empty">
+          Could not prepare route preview from current location. Please move the map and try again.
+        </div>
+      `;
+    }
+    openRoutePanel();
     return;
   }
 
@@ -385,9 +398,19 @@ function showRouteInfo(previewState) {
   const content = document.getElementById('route-content');
   if (!panel || !content) return;
 
-  const { plan, poi, name } = previewState;
+  const { plan, poi, name } = previewState || {};
+  if (!plan || !poi) {
+    content.innerHTML = `<div class="preview-empty">No route data available yet.</div>`;
+    return;
+  }
   const properties = poi?.properties || {};
-  const instructionsHtml = (plan.instructions || []).map((instruction, idx) => `
+  const steps = Array.isArray(plan.instructions) && plan.instructions.length
+    ? plan.instructions
+    : [{
+        text: `Head towards ${name || properties.title || 'your destination'} following the highlighted route.`
+      }];
+
+  const instructionsHtml = steps.map((instruction, idx) => `
     <div class="preview-step">
       <div class="preview-step-num">${idx + 1}</div>
       <div class="preview-step-text">${escapeHtml(instruction.text)}</div>
@@ -401,7 +424,7 @@ function showRouteInfo(previewState) {
       ${properties.floorName ? `<p>Floor: ${escapeHtml(properties.floorName)}</p>` : ''}
       <p>Distance: ${Math.round(plan.distanceMeters)}m • ETA: ${plan.etaMinutes} min</p>
     </div>
-    <div class="preview-steps">${instructionsHtml || '<div class="preview-empty">No route steps available.</div>'}</div>
+    <div class="preview-steps">${instructionsHtml}</div>
     <button id="start-route-btn" class="route-btn">Start Live Navigation</button>
   `;
   openRoutePanel();

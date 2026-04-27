@@ -999,6 +999,7 @@ body{
   padding: 14px 16px 16px;
   overflow-y: auto;
   max-height: none;
+  min-height: 150px;
 }
 .preview-steps {
   margin-top: 10px;
@@ -1070,7 +1071,7 @@ body{
     width: auto;
     top: auto;
     bottom: 8px;
-    max-height: 62vh;
+    max-height: 68vh;
     border-radius: 16px;
   }
   #route-info .route-content {
