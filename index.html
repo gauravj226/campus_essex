@@ -53,10 +53,10 @@
 
   <!-- Map Container -->
   <div class="map-container">
-        <div id="mazemap-container" style="width: 100%; height: 100%;"></div>  ></div>
+        <div id="map" style="width: 100%; height: 100%;"></div>  ></div>
 
   <!-- Chat Panel -->
-    <div id="mazemap-container" style="width: 100%; height: 100%;"></div>    <div class="chat-header">
+    <div id="map" style="width: 100%; height: 100%;"></div>    <div class="chat-header">
       <button id="chat-close" class="panel-close-btn" aria-label="Close chat">&#215;</button>
     </div>
     <div id="chat-messages" class="chat-messages"></div>
@@ -133,21 +133,6 @@
     </div>
   </div>
 
-  <!-- Scripts -->
-  <script>
-    window.addEventListener('load', function() {
-      if (typeof Mazemap !== 'undefined') {
-        var myMap = new Mazemap.Map({container: 'mazemap-container', campuses: 2195});
-        myMap.on('click', function(e){
-          myMap.flyTo({center:e.lngLat, zoom: 18});
-        });
-        console.log('✅ MazeMap initialized successfully');
-      } else {
-        console.error('❌ MazeMap library not loaded');
-      }
-    });
-  
-  <script src="js/app.js" type="module"></script>
   <script src="js/chat.js" type="module"></script>
   <script src="js/favourites.js" type="module"></script>
   <script src="js/accessibility.js" type="module"></script>
