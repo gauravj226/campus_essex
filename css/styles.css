@@ -755,19 +755,25 @@ body{
   cursor: pointer; transition: 0.2s; border-bottom: 1px solid #f0f0f0;
 }
 .result-item:hover { background: #f9f9f9; }
-.result-icon { font-size: 1.4rem; }
+.result-icon {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #183f6f;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
 .result-text { flex: 1; }
 .result-name { font-weight: 500; color: #333; }
 .result-building { font-size: 0.85rem; color: #888; }
 .result-fav {
-  width: 28px;
-  height: 28px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 1px solid #cad8e6;
+  border: 1px solid #b9cce0;
   background: #fff;
-  color: #174473;
+  color: #2d5a8a;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 1.25rem;
   line-height: 1;
 }
 .result-fav:hover { background: #f2f7fd; }
@@ -866,25 +872,70 @@ body{
   background: #fff7f7;
 }
 
-.user-location-marker,
+/* Animated Cat Marker */
+.cat-marker {
+  width: 52px;
+  height: 52px;
+  position: relative;
+  transform-origin: center center;
+  pointer-events: none;
+}
+
+.cat-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: 1px;
+  width: 30px;
+  height: 8px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,0.28), rgba(0,0,0,0));
+  border-radius: 50%;
+}
+
+.cat-sprite {
+  position: absolute;
+  left: 2px;
+  top: 1px;
+  width: 48px;
+  height: 48px;
+  background-image: url('../assets/cat-walk-sprite.svg');
+  background-size: 384px 48px;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  transform-origin: center bottom;
+  animation: cat-idle 2s ease-in-out infinite;
+}
+
+.cat-sprite.facing-left {
+  transform: scaleX(-1);
+}
+
+.cat-sprite.moving {
+  animation: cat-walk 0.8s steps(8) infinite;
+}
+
+.cat-sprite.idle {
+  background-image: url('../assets/cat-idle.svg');
+  background-size: contain;
+  animation: cat-idle 2s ease-in-out infinite;
+}
+
+@keyframes cat-walk {
+  0% { background-position: 0 0; }
+  100% { background-position: -384px 0; }
+}
+@keyframes cat-idle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
 .search-result-marker {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0;
+  background: #d81b60;
   border: 3px solid #fff;
   box-shadow: 0 0 0 2px rgba(0, 70, 127, 0.25);
-}
-
-.user-location-marker {
-  background: #1e88e5;
-}
-
-.search-result-marker {
-  background: #d81b60;
 }
 
 @media(max-width:768px){

@@ -98,11 +98,20 @@ class NavigationController {
 
     await loadLandmarks();
 
-    const routePoints = await this.calculateRoute(userPos, destination);
-    if (!routePoints.length) {
-      this.showToast('Could not calculate full indoor path. Using on-site direct guidance.', 'info');
-      return false;
+    const straightDistance = haversineDistanceMeters(userPos, destination);
+    let routePoints = [];
+
+    if (straightDistance <= 5) {
+      routePoints = [userPos, destination];
+    } else {
+      routePoints = await this.calculateRoute(userPos, destination);
+      if (!routePoints.length) {
+        routePoints = this.buildDirectFallbackRoute(userPos, destination);
+        this.showToast('Using simple on-site guidance route.', 'info', 2000);
+      }
     }
+
+    if (!routePoints.length) return false;
 
     this.destination = {
       name: destinationName || poi?.properties?.title || 'Destination',
@@ -111,7 +120,7 @@ class NavigationController {
     };
 
     this.routePoints = routePoints;
-    this.instructions = this.buildHumanizedInstructions(routePoints, this.destination.name);
+    this.instructions = this.buildHumanizedInstructions(routePoints, this.destination.name, poi);
     this.currentStepIndex = 0;
     this.pendingPrepStep = null;
     this.isActive = true;
@@ -131,12 +140,27 @@ class NavigationController {
     const existing = this.getCurrentUserLngLat?.();
     if (Array.isArray(existing) && existing.length >= 2) return existing;
 
-    if (!('geolocation' in navigator)) return null;
+    if (!('geolocation' in navigator)) {
+      const center = this.map?.getCenter?.();
+      if (center && Number.isFinite(center.lng) && Number.isFinite(center.lat)) {
+        this.showToast('Using map centre as temporary start point.', 'info', 2200);
+        return [center.lng, center.lat];
+      }
+      return null;
+    }
 
     return new Promise((resolve) => {
       navigator.geolocation.getCurrentPosition(
         (position) => resolve([position.coords.longitude, position.coords.latitude]),
-        () => resolve(null),
+        () => {
+          const center = this.map?.getCenter?.();
+          if (center && Number.isFinite(center.lng) && Number.isFinite(center.lat)) {
+            this.showToast('GPS temporarily unavailable, starting from map centre.', 'info', 2500);
+            resolve([center.lng, center.lat]);
+            return;
+          }
+          resolve(null);
+        },
         { enableHighAccuracy: true, timeout: 7000, maximumAge: 1500 }
       );
     });
@@ -213,8 +237,20 @@ class NavigationController {
     return route;
   }
 
-  buildHumanizedInstructions(routePoints, destinationName) {
-    if (!Array.isArray(routePoints) || routePoints.length < 2) return [];
+  buildHumanizedInstructions(routePoints, destinationName, destinationPoi) {
+    if (!Array.isArray(routePoints) || routePoints.length === 0) return [];
+
+    if (routePoints.length === 1) {
+      return [{
+        index: 0,
+        point: routePoints[0],
+        text: this.composeArrivalInstruction(destinationName, destinationPoi, null),
+        turnType: 'arrive',
+        segmentDistance: 0,
+        etaMinutes: 0,
+        landmark: null
+      }];
+    }
 
     const decisionPoints = pickDecisionPoints(routePoints);
     const instructions = [];
@@ -235,7 +271,8 @@ class NavigationController {
         segmentDistance,
         nearest,
         turnType,
-        destinationName
+        destinationName,
+        destinationPoi
       });
 
       instructions.push({
@@ -253,12 +290,10 @@ class NavigationController {
   }
 
   composeInstructionText(context) {
-    const { index, total, next, segmentDistance, nearest, turnType, destinationName } = context;
+    const { index, total, next, segmentDistance, nearest, turnType, destinationName, destinationPoi } = context;
 
     if (index === total - 1) {
-      const cue = nearest?.landmark?.visualCues?.[0];
-      if (cue) return `You have arrived. ${destinationName} is here, look for ${cue}.`;
-      return `You have arrived at ${destinationName}.`;
+      return this.composeArrivalInstruction(destinationName, destinationPoi, nearest?.landmark || null);
     }
 
     const landmarkName = nearest?.landmark?.name;
@@ -297,8 +332,24 @@ class NavigationController {
     return `Continue straight for about ${meters} meters.`;
   }
 
+  composeArrivalInstruction(destinationName, destinationPoi, nearestLandmark) {
+    const floor = destinationPoi?.properties?.floorName || destinationPoi?.properties?.zLevel;
+    const building = destinationPoi?.properties?.buildingName;
+    const cue = nearestLandmark?.visualCues?.[0];
+    const nearby = Array.isArray(nearestLandmark?.nearbyPOIs) && nearestLandmark.nearbyPOIs.length
+      ? nearestLandmark.nearbyPOIs[0]
+      : null;
+
+    const bits = [`You have arrived at ${destinationName}.`];
+    if (building) bits.push(`Building: ${building}.`);
+    if (floor !== undefined && floor !== null && `${floor}` !== '') bits.push(`Floor: ${floor}.`);
+    if (cue) bits.push(`Look for ${cue}.`);
+    if (nearby) bits.push(`Nearby: ${nearby}.`);
+    return bits.join(' ');
+  }
+
   onUserLocationUpdate({ lngLat, heading }) {
-    if (!this.isActive || !Array.isArray(this.routePoints) || this.routePoints.length < 2) return;
+    if (!this.isActive || !Array.isArray(this.routePoints) || this.routePoints.length === 0) return;
 
     this.updateCompass(heading);
     this.updateArrowToNextPoint(lngLat, heading);
@@ -355,7 +406,7 @@ class NavigationController {
     if (!newRoute.length) return;
 
     this.routePoints = newRoute;
-    this.instructions = this.buildHumanizedInstructions(newRoute, this.destination.name);
+    this.instructions = this.buildHumanizedInstructions(newRoute, this.destination.name, this.destination.poi);
     this.currentStepIndex = 0;
     this.pendingPrepStep = null;
 
@@ -405,6 +456,10 @@ class NavigationController {
     this.updateRouteSource([], []);
 
     if (manual) this.showToast('Navigation stopped', 'info', 1400);
+  }
+
+  isNavigating() {
+    return this.isActive;
   }
 
   renderInstructionPanel(userLngLat) {

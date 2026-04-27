@@ -14,6 +14,10 @@ let searchMarkers = [];
 let currentUserLngLat = null;
 let currentUserHeading = null;
 let navigationController = null;
+let userMarker = null;
+let catSprite = null;
+let previousUserLngLat = null;
+let previousLocationTimestamp = null;
 
 window.showToast = function(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
@@ -86,13 +90,7 @@ function initMap() {
       });
 
       pathfinder = new Mazemap.Pathfinder(map);
-      navigationController = createNavigationController({
-        map,
-        pathfinder,
-        getAccessibilityMode: isAccessibilityMode,
-        showToast,
-        getCurrentUserLngLat
-      });
+      ensureNavigationController();
 
       window.showToast('Campus map loaded! Search for any location.', 'success');
       console.log('Essex Navigator ready | Campus ID:', CAMPUS_ID);
@@ -104,25 +102,35 @@ function initMap() {
   }
 }
 
+function ensureNavigationController() {
+  if (navigationController || !map || !pathfinder) return navigationController;
+
+  navigationController = createNavigationController({
+    map,
+    pathfinder,
+    getAccessibilityMode: isAccessibilityMode,
+    showToast,
+    getCurrentUserLngLat
+  });
+
+  return navigationController;
+}
+
 function initLiveGpsTracking() {
   if (!('geolocation' in navigator)) return;
 
-  let userMarker = null;
-
   navigator.geolocation.watchPosition(
     (position) => {
-      const { latitude, longitude, heading } = position.coords;
+      const { latitude, longitude, heading, speed } = position.coords;
       const lngLat = [longitude, latitude];
       currentUserLngLat = lngLat;
-      currentUserHeading = Number.isFinite(heading) ? heading : currentUserHeading;
+      const movementHeading = Number.isFinite(heading) ? heading : calculateBearing(previousUserLngLat, lngLat);
+      currentUserHeading = Number.isFinite(movementHeading) ? movementHeading : currentUserHeading;
+      const derivedSpeed = estimateSpeedMps(previousUserLngLat, lngLat, previousLocationTimestamp, position.timestamp);
+      const effectiveSpeed = Number.isFinite(speed) ? speed : derivedSpeed;
 
       if (!userMarker && map) {
-        const markerEl = document.createElement('div');
-        markerEl.className = 'user-location-marker';
-        markerEl.textContent = 'o';
-        markerEl.style.fontSize = '22px';
-        markerEl.style.color = '#1e88e5';
-        markerEl.style.transform = 'translate(-50%, -50%)';
+        const markerEl = createCatMarkerElement();
 
         userMarker = new Mazemap.mapboxgl.Marker({ element: markerEl })
           .setLngLat(lngLat)
@@ -134,22 +142,36 @@ function initLiveGpsTracking() {
         userMarker.setLngLat(lngLat);
       }
 
-      if (userMarker && Number.isFinite(heading)) {
-        userMarker.getElement().style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+      if (userMarker) {
+        updateCatMarkerState({
+          heading: currentUserHeading,
+          speed: Number.isFinite(effectiveSpeed) ? effectiveSpeed : 0
+        });
+      }
+
+      if (navigationController?.isNavigating()) {
+        map.easeTo({
+          center: lngLat,
+          duration: 500,
+          zoom: map.getZoom()
+        });
       }
 
       navigationController?.onUserLocationUpdate({
         lngLat,
-        heading: Number.isFinite(heading) ? heading : null
+        heading: Number.isFinite(currentUserHeading) ? currentUserHeading : null
       });
 
       document.dispatchEvent(new CustomEvent('user-location-updated', {
         detail: {
           lngLat,
-          heading: Number.isFinite(heading) ? heading : null,
+          heading: Number.isFinite(currentUserHeading) ? currentUserHeading : null,
           accuracy: position.coords.accuracy || null
         }
       }));
+
+      previousUserLngLat = lngLat;
+      previousLocationTimestamp = position.timestamp;
     },
     (error) => {
       console.error('GPS error:', error);
@@ -162,6 +184,47 @@ function initLiveGpsTracking() {
       maximumAge: 1000
     }
   );
+}
+
+function createCatMarkerElement() {
+  const markerEl = document.createElement('div');
+  markerEl.className = 'cat-marker';
+
+  const shadow = document.createElement('div');
+  shadow.className = 'cat-shadow';
+  markerEl.appendChild(shadow);
+
+  catSprite = document.createElement('div');
+  catSprite.className = 'cat-sprite idle';
+
+  markerEl.appendChild(catSprite);
+
+  return markerEl;
+}
+
+function updateCatMarkerState({ heading, speed }) {
+  if (!userMarker || !catSprite) return;
+
+  const markerElement = userMarker.getElement();
+  if (Number.isFinite(heading)) {
+    markerElement.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+  }
+
+  const moving = Number.isFinite(speed) ? speed > 0.3 : false;
+  catSprite.classList.toggle('idle', !moving);
+  catSprite.classList.toggle('moving', moving);
+
+  if (moving && speed > 2) {
+    catSprite.style.animationDuration = '0.42s';
+  } else if (moving && speed > 0.7) {
+    catSprite.style.animationDuration = '0.72s';
+  } else if (moving) {
+    catSprite.style.animationDuration = '0.95s';
+  } else {
+    catSprite.style.animationDuration = '2.0s';
+  }
+
+  catSprite.classList.toggle('facing-left', Number.isFinite(heading) && heading >= 90 && heading <= 270);
 }
 
 function handleMapClick() {
@@ -196,10 +259,10 @@ function renderResults(pois, query) {
 
   container.innerHTML = pois.map((poi) => {
     const name = poi.title || poi.name || 'Unknown';
-    const building = poi.buildingName || poi.campusName || '';
+    const building = poi.buildingName || 'Colchester';
     return `
       <div class="result-item" data-poi-id="${poi.poiId || ''}" data-name="${escapeHtml(name)}">
-        <div class="result-icon">O</div>
+        <div class="result-icon" aria-hidden="true"></div>
         <div class="result-text">
           <div class="result-name">${escapeHtml(name)}</div>
           <div class="result-building">${escapeHtml(building)}</div>
@@ -250,9 +313,6 @@ export async function navigateToPOI(poiId, name) {
 
     const markerEl = document.createElement('div');
     markerEl.className = 'search-result-marker';
-    markerEl.textContent = 'o';
-    markerEl.style.fontSize = '32px';
-    markerEl.style.transform = 'translate(-50%, -100%)';
     markerEl.title = name;
 
     const marker = new Mazemap.mapboxgl.Marker({ element: markerEl })
@@ -299,13 +359,19 @@ function showRouteInfo(poi, name) {
     button.textContent = 'Calculating route...';
 
     try {
+      ensureNavigationController();
+      if (!navigationController) {
+        showToast('Navigation is still loading, please try again in a moment.', 'info');
+        return;
+      }
+
       const started = await navigationController?.startNavigationToPoi({
         poi,
         destinationName: name || properties.title || 'Destination'
       });
 
       if (!started) {
-        showToast('Unable to start navigation right now. Please ensure location access is enabled.', 'error');
+        showToast('Unable to start navigation right now. Check location permission and try again.', 'error');
       } else {
         panel.classList.remove('active');
       }
@@ -314,6 +380,42 @@ function showRouteInfo(poi, name) {
       button.textContent = originalText;
     }
   });
+}
+
+function calculateBearing(from, to) {
+  if (!Array.isArray(from) || !Array.isArray(to)) return null;
+  const lat1 = from[1] * Math.PI / 180;
+  const lat2 = to[1] * Math.PI / 180;
+  const dLon = (to[0] - from[0]) * Math.PI / 180;
+
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) -
+            Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  const brng = Math.atan2(y, x) * 180 / Math.PI;
+  return (brng + 360) % 360;
+}
+
+function estimateSpeedMps(from, to, prevTs, currTs) {
+  if (!Array.isArray(from) || !Array.isArray(to)) return 0;
+  if (!Number.isFinite(prevTs) || !Number.isFinite(currTs) || currTs <= prevTs) return 0;
+  const deltaSec = (currTs - prevTs) / 1000;
+  if (deltaSec <= 0) return 0;
+
+  const meters = distanceMeters(from, to);
+  return meters / deltaSec;
+}
+
+function distanceMeters(from, to) {
+  const R = 6371000;
+  const dLat = ((to[1] - from[1]) * Math.PI) / 180;
+  const dLon = ((to[0] - from[0]) * Math.PI) / 180;
+  const lat1 = (from[1] * Math.PI) / 180;
+  const lat2 = (to[1] * Math.PI) / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(lat1) * Math.cos(lat2) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 function setupSearch() {
