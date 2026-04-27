@@ -119,7 +119,7 @@ function initLiveGpsTracking() {
       if (!userMarker && map) {
         const markerEl = document.createElement('div');
         markerEl.className = 'user-location-marker';
-        markerEl.textContent = '?';
+        markerEl.textContent = 'o';
         markerEl.style.fontSize = '22px';
         markerEl.style.color = '#1e88e5';
         markerEl.style.transform = 'translate(-50%, -50%)';
@@ -199,12 +199,12 @@ function renderResults(pois, query) {
     const building = poi.buildingName || poi.campusName || '';
     return `
       <div class="result-item" data-poi-id="${poi.poiId || ''}" data-name="${escapeHtml(name)}">
-        <div class="result-icon">??</div>
+        <div class="result-icon">O</div>
         <div class="result-text">
           <div class="result-name">${escapeHtml(name)}</div>
           <div class="result-building">${escapeHtml(building)}</div>
         </div>
-        <button class="result-fav" aria-label="Save to favourites" title="Save to favourites">?</button>
+        <button class="result-fav" aria-label="Save to favourites" title="Save to favourites">+</button>
       </div>
     `;
   }).join('');
@@ -250,7 +250,7 @@ export async function navigateToPOI(poiId, name) {
 
     const markerEl = document.createElement('div');
     markerEl.className = 'search-result-marker';
-    markerEl.textContent = '??';
+    markerEl.textContent = 'o';
     markerEl.style.fontSize = '32px';
     markerEl.style.transform = 'translate(-50%, -100%)';
     markerEl.title = name;
@@ -282,7 +282,7 @@ function showRouteInfo(poi, name) {
   const properties = poi.properties || {};
   content.innerHTML = `
     <div class="route-destination">
-      <h4>?? ${escapeHtml(name || properties.title || 'Location')}</h4>
+      <h4>${escapeHtml(name || properties.title || 'Location')}</h4>
       ${properties.buildingName ? `<p>Building: ${escapeHtml(properties.buildingName)}</p>` : ''}
       ${properties.floorName ? `<p>Floor: ${escapeHtml(properties.floorName)}</p>` : ''}
       ${Array.isArray(properties.categories) ? `<p>Type: ${escapeHtml(properties.categories.join(', '))}</p>` : ''}
@@ -305,33 +305,15 @@ function showRouteInfo(poi, name) {
       });
 
       if (!started) {
-        fallbackOpenExternalDirections(poi, name || properties.title || 'Destination');
+        showToast('Unable to start navigation right now. Please ensure location access is enabled.', 'error');
+      } else {
+        panel.classList.remove('active');
       }
     } finally {
       button.disabled = false;
       button.textContent = originalText;
     }
   });
-}
-
-async function fallbackOpenExternalDirections(poi, label) {
-  try {
-    const lngLatObj = Mazemap.Util.getPoiLngLat(poi);
-    const destination = [lngLatObj.lng ?? lngLatObj[0], lngLatObj.lat ?? lngLatObj[1]];
-
-    if (currentUserLngLat) {
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${currentUserLngLat[1]},${currentUserLngLat[0]}&destination=${destination[1]},${destination[0]}&travelmode=walking`;
-      window.open(url, '_blank', 'noopener,noreferrer');
-      showToast(`Opened external directions to ${label}`, 'info');
-      return;
-    }
-
-    const url = `https://www.google.com/maps/search/?api=1&query=${destination[1]},${destination[0]}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-    showToast(`Opened ${label} in map`, 'info');
-  } catch (error) {
-    showToast('Unable to open fallback directions', 'error');
-  }
 }
 
 function setupSearch() {

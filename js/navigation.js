@@ -90,7 +90,7 @@ class NavigationController {
       return false;
     }
 
-    const userPos = this.getCurrentUserLngLat?.();
+    const userPos = await this.resolveUserPosition();
     if (!userPos) {
       this.showToast('Waiting for your location before starting navigation', 'info');
       return false;
@@ -100,7 +100,7 @@ class NavigationController {
 
     const routePoints = await this.calculateRoute(userPos, destination);
     if (!routePoints.length) {
-      this.showToast('Could not calculate an indoor route. Falling back to map directions.', 'error');
+      this.showToast('Could not calculate full indoor path. Using on-site direct guidance.', 'info');
       return false;
     }
 
@@ -127,16 +127,37 @@ class NavigationController {
     return true;
   }
 
+  async resolveUserPosition() {
+    const existing = this.getCurrentUserLngLat?.();
+    if (Array.isArray(existing) && existing.length >= 2) return existing;
+
+    if (!('geolocation' in navigator)) return null;
+
+    return new Promise((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve([position.coords.longitude, position.coords.latitude]),
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 7000, maximumAge: 1500 }
+      );
+    });
+  }
+
   async calculateRoute(fromLngLat, toLngLat) {
-    if (!this.pathfinder) return [];
+    if (!this.pathfinder) return this.buildDirectFallbackRoute(fromLngLat, toLngLat);
+
+    const from = normalizePoint(fromLngLat);
+    const to = normalizePoint(toLngLat);
+    if (!from || !to) return [];
 
     const accessible = Boolean(this.getAccessibilityMode?.());
 
     const candidates = [
-      () => this.pathfinder.getRoute({ from: fromLngLat, to: toLngLat, accessible }),
-      () => this.pathfinder.getRoute(fromLngLat, toLngLat, { accessible }),
-      () => this.pathfinder.findPath(fromLngLat, toLngLat, { accessible }),
-      () => this.pathfinder.route({ from: fromLngLat, to: toLngLat, accessible })
+      () => this.pathfinder.getRoute({ from, to, accessible }),
+      () => this.pathfinder.getRoute(from, to, { accessible }),
+      () => this.pathfinder.findPath(from, to, { accessible }),
+      () => this.pathfinder.route({ from, to, accessible }),
+      () => this.pathfinder.findPath({ from, to, accessible }),
+      () => this.pathfinder.getPath?.(from, to, { accessible })
     ];
 
     for (const resolver of candidates) {
@@ -149,7 +170,47 @@ class NavigationController {
       }
     }
 
-    return [];
+    return this.buildDirectFallbackRoute(fromLngLat, toLngLat);
+  }
+
+  buildDirectFallbackRoute(fromLngLat, toLngLat) {
+    const from = normalizePoint(fromLngLat);
+    const to = normalizePoint(toLngLat);
+    if (!from || !to) return [];
+
+    const [fromLng, fromLat] = from;
+    const [toLng, toLat] = to;
+
+    const deltaLng = Math.abs(toLng - fromLng);
+    const deltaLat = Math.abs(toLat - fromLat);
+
+    // Build an orthogonal, corridor-like fallback route:
+    // move along the dominant axis first, then turn once.
+    let corner;
+    if (deltaLng >= deltaLat) {
+      corner = [toLng, fromLat];
+    } else {
+      corner = [fromLng, toLat];
+    }
+
+    const route = dedupeSequential([
+      from,
+      corner,
+      to
+    ]);
+
+    // If source/destination are almost aligned, add a small "decision point"
+    // to keep instruction generation and progress tracking stable.
+    if (route.length < 3) {
+      const t = 0.5;
+      const midpoint = [
+        fromLng + (toLng - fromLng) * t,
+        fromLat + (toLat - fromLat) * t
+      ];
+      return dedupeSequential([from, midpoint, to]);
+    }
+
+    return route;
   }
 
   buildHumanizedInstructions(routePoints, destinationName) {
@@ -551,10 +612,8 @@ function normalizeRoutePoints(rawRoute) {
 
   for (const candidate of directCandidates) {
     if (!Array.isArray(candidate)) continue;
-
-    const points = candidate
-      .map(normalizePoint)
-      .filter(Boolean);
+    const flattened = flattenCoordinates(candidate);
+    const points = flattened.map(normalizePoint).filter(Boolean);
 
     if (points.length > 1) return dedupeSequential(points);
   }
@@ -578,6 +637,23 @@ function normalizePoint(pointLike) {
   }
 
   return null;
+}
+
+function flattenCoordinates(candidate) {
+  if (!Array.isArray(candidate)) return [];
+  if (candidate.length >= 2 && typeof candidate[0] === 'number' && typeof candidate[1] === 'number') {
+    return [candidate];
+  }
+
+  const out = [];
+  for (const item of candidate) {
+    if (Array.isArray(item)) {
+      out.push(...flattenCoordinates(item));
+    } else {
+      out.push(item);
+    }
+  }
+  return out;
 }
 
 function dedupeSequential(points) {
