@@ -13,6 +13,8 @@ import {
 const ROUTE_SOURCE_ID = 'human-nav-route-source';
 const UPCOMING_LAYER_ID = 'human-nav-route-upcoming';
 const COMPLETED_LAYER_ID = 'human-nav-route-completed';
+const PREVIEW_SOURCE_ID = 'human-nav-preview-source';
+const PREVIEW_LAYER_ID = 'human-nav-preview-layer';
 
 const DEFAULT_OFF_ROUTE_THRESHOLD_METERS = 15;
 const WAYPOINT_REACHED_METERS = 8;
@@ -38,6 +40,7 @@ class NavigationController {
     this.lastRerouteAt = 0;
     this.pendingPrepStep = null;
     this.voiceEnabled = true;
+    this.previewPlan = null;
 
     this.ui = this.bindUI();
     this.bindDeviceOrientation();
@@ -83,17 +86,62 @@ class NavigationController {
     });
   }
 
-  async startNavigationToPoi({ poi, destinationName }) {
+  async startNavigationToPoi({ poi, destinationName, plan = null }) {
+    const routePlan = plan || await this.createRoutePlanToPoi({ poi, destinationName });
+    const planData = routePlan?.routePoints?.length ? routePlan : null;
+    if (!planData) return false;
+
+    const normalizedPlan = {
+      ...planData,
+      destination: planData.destination || {
+        name: destinationName || poi?.properties?.title || 'Destination',
+        lngLat: this.extractPoiLngLat(poi),
+        poi
+      },
+      instructions: Array.isArray(planData.instructions) && planData.instructions.length
+        ? planData.instructions
+        : this.buildHumanizedInstructions(
+            planData.routePoints,
+            (planData.destination?.name || destinationName || poi?.properties?.title || 'Destination'),
+            poi || planData.destination?.poi
+          )
+    };
+
+    if (!normalizedPlan.destination?.lngLat) return false;
+
+    this.destination = normalizedPlan.destination;
+    this.routePoints = normalizedPlan.routePoints;
+    this.instructions = normalizedPlan.instructions;
+    if (!this.instructions.length) return false;
+
+    this.currentStepIndex = 0;
+    this.pendingPrepStep = null;
+    this.isActive = true;
+    this.previewPlan = null;
+    this.clearPreviewRoute();
+
+    this.ensureRouteLayers();
+    this.renderRoute();
+    this.renderInstructionPanel();
+
+    this.ui.panel?.classList.add('active');
+    this.speakInstruction(this.instructions[0]?.text);
+    this.showToast(`Turn-by-turn navigation started to ${this.destination.name}`, 'success');
+
+    return true;
+  }
+
+  async createRoutePlanToPoi({ poi, destinationName }) {
     const destination = this.extractPoiLngLat(poi);
     if (!destination) {
       this.showToast('Destination coordinates unavailable for navigation', 'error');
-      return false;
+      return null;
     }
 
     const userPos = await this.resolveUserPosition();
     if (!userPos) {
       this.showToast('Waiting for your location before starting navigation', 'info');
-      return false;
+      return null;
     }
 
     await loadLandmarks();
@@ -111,29 +159,30 @@ class NavigationController {
       }
     }
 
-    if (!routePoints.length) return false;
+    if (!routePoints.length) return null;
 
-    this.destination = {
-      name: destinationName || poi?.properties?.title || 'Destination',
-      lngLat: destination,
-      poi
+    const name = destinationName || poi?.properties?.title || 'Destination';
+    const instructions = this.buildHumanizedInstructions(routePoints, name, poi);
+    const distanceMeters = cumulativeDistanceMeters(routePoints);
+    const etaMinutes = estimateWalkTimeMinutes(distanceMeters);
+
+    return {
+      from: userPos,
+      destination: { name, lngLat: destination, poi },
+      routePoints,
+      instructions,
+      distanceMeters,
+      etaMinutes
     };
+  }
 
-    this.routePoints = routePoints;
-    this.instructions = this.buildHumanizedInstructions(routePoints, this.destination.name, poi);
-    this.currentStepIndex = 0;
-    this.pendingPrepStep = null;
-    this.isActive = true;
+  async previewRouteToPoi({ poi, destinationName }) {
+    const plan = await this.createRoutePlanToPoi({ poi, destinationName });
+    if (!plan) return null;
 
-    this.ensureRouteLayers();
-    this.renderRoute();
-    this.renderInstructionPanel();
-
-    this.ui.panel?.classList.add('active');
-    this.speakInstruction(this.instructions[0]?.text);
-    this.showToast(`Turn-by-turn navigation started to ${this.destination.name}`, 'success');
-
-    return true;
+    this.previewPlan = plan;
+    this.drawPreviewRoute(plan.routePoints);
+    return plan;
   }
 
   async resolveUserPosition() {
@@ -572,6 +621,53 @@ class NavigationController {
         }
       });
     }
+  }
+
+  ensurePreviewLayer() {
+    if (!this.map) return;
+
+    if (!this.map.getSource(PREVIEW_SOURCE_ID)) {
+      this.map.addSource(PREVIEW_SOURCE_ID, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }]
+        }
+      });
+    }
+
+    if (!this.map.getLayer(PREVIEW_LAYER_ID)) {
+      this.map.addLayer({
+        id: PREVIEW_LAYER_ID,
+        type: 'line',
+        source: PREVIEW_SOURCE_ID,
+        paint: {
+          'line-color': '#ff8f00',
+          'line-width': 5,
+          'line-opacity': 0.85,
+          'line-dasharray': [2, 1]
+        }
+      });
+    }
+  }
+
+  drawPreviewRoute(routePoints) {
+    this.ensurePreviewLayer();
+    const source = this.map?.getSource(PREVIEW_SOURCE_ID);
+    if (!source) return;
+    source.setData({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: routePoints || [] } }]
+    });
+  }
+
+  clearPreviewRoute() {
+    const source = this.map?.getSource(PREVIEW_SOURCE_ID);
+    if (!source) return;
+    source.setData({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } }]
+    });
   }
 
   renderRoute() {

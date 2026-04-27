@@ -18,6 +18,8 @@ let userMarker = null;
 let catSprite = null;
 let previousUserLngLat = null;
 let previousLocationTimestamp = null;
+let destinationPopup = null;
+let activePreview = null;
 
 window.showToast = function(msg, type = 'info', duration = 3500) {
   const container = document.getElementById('toast-container');
@@ -320,6 +322,7 @@ export async function navigateToPOI(poiId, name) {
       .addTo(map);
 
     searchMarkers.push(marker);
+    showDestinationDirectionsCard(target, poi, name || poi.properties?.title || 'Destination');
 
     const input = document.getElementById('search-input');
     if (input) input.value = name || '';
@@ -327,30 +330,81 @@ export async function navigateToPOI(poiId, name) {
     const results = document.getElementById('search-results');
     if (results) results.classList.remove('active');
 
-    showRouteInfo(poi, name);
+    await previewRoute(poi, name);
   } catch (error) {
     console.error('Navigation error:', error);
     window.showToast('Could not navigate to that location', 'error');
   }
 }
 
-function showRouteInfo(poi, name) {
+function showDestinationDirectionsCard(targetLngLat, poi, name) {
+  if (!map) return;
+  if (destinationPopup) destinationPopup.remove();
+
+  const card = document.createElement('div');
+  card.className = 'map-direction-card';
+  card.innerHTML = `
+    <div class="map-direction-title">${escapeHtml(name)}</div>
+    <button class="map-direction-btn" type="button">Directions</button>
+  `;
+  card.querySelector('.map-direction-btn')?.addEventListener('click', async () => {
+    await previewRoute(poi, name);
+    openRoutePanel();
+  });
+
+  destinationPopup = new Mazemap.mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+    offset: 22
+  })
+    .setLngLat(targetLngLat)
+    .setDOMContent(card)
+    .addTo(map);
+}
+
+async function previewRoute(poi, name) {
+  ensureNavigationController();
+  if (!navigationController) return;
+
+  const plan = await navigationController.previewRouteToPoi({
+    poi,
+    destinationName: name || poi?.properties?.title || 'Destination'
+  });
+
+  if (!plan) {
+    showToast('Could not prepare route preview.', 'error');
+    return;
+  }
+
+  activePreview = { plan, poi, name: name || poi?.properties?.title || 'Destination' };
+  showRouteInfo(activePreview);
+}
+
+function showRouteInfo(previewState) {
   const panel = document.getElementById('route-info');
   const content = document.getElementById('route-content');
   if (!panel || !content) return;
 
-  const properties = poi.properties || {};
+  const { plan, poi, name } = previewState;
+  const properties = poi?.properties || {};
+  const instructionsHtml = (plan.instructions || []).map((instruction, idx) => `
+    <div class="preview-step">
+      <div class="preview-step-num">${idx + 1}</div>
+      <div class="preview-step-text">${escapeHtml(instruction.text)}</div>
+    </div>
+  `).join('');
+
   content.innerHTML = `
     <div class="route-destination">
       <h4>${escapeHtml(name || properties.title || 'Location')}</h4>
       ${properties.buildingName ? `<p>Building: ${escapeHtml(properties.buildingName)}</p>` : ''}
       ${properties.floorName ? `<p>Floor: ${escapeHtml(properties.floorName)}</p>` : ''}
-      ${Array.isArray(properties.categories) ? `<p>Type: ${escapeHtml(properties.categories.join(', '))}</p>` : ''}
+      <p>Distance: ${Math.round(plan.distanceMeters)}m • ETA: ${plan.etaMinutes} min</p>
     </div>
+    <div class="preview-steps">${instructionsHtml || '<div class="preview-empty">No route steps available.</div>'}</div>
     <button id="start-route-btn" class="route-btn">Start Live Navigation</button>
   `;
-
-  panel.classList.add('active');
+  openRoutePanel();
 
   document.getElementById('start-route-btn')?.addEventListener('click', async (event) => {
     const button = event.currentTarget;
@@ -367,19 +421,32 @@ function showRouteInfo(poi, name) {
 
       const started = await navigationController?.startNavigationToPoi({
         poi,
-        destinationName: name || properties.title || 'Destination'
+        destinationName: name || properties.title || 'Destination',
+        plan: plan
       });
 
       if (!started) {
         showToast('Unable to start navigation right now. Check location permission and try again.', 'error');
       } else {
-        panel.classList.remove('active');
+        closeRoutePanel();
       }
     } finally {
       button.disabled = false;
       button.textContent = originalText;
     }
   });
+}
+
+function openRoutePanel() {
+  const panel = document.getElementById('route-info');
+  if (!panel) return;
+  panel.classList.add('active');
+}
+
+function closeRoutePanel() {
+  const panel = document.getElementById('route-info');
+  if (!panel) return;
+  panel.classList.remove('active');
 }
 
 function calculateBearing(from, to) {
@@ -490,7 +557,7 @@ function setupPanels() {
   const routeClose = document.getElementById('route-close');
   const routePanel = document.getElementById('route-info');
   if (routeClose && routePanel) {
-    routeClose.addEventListener('click', () => routePanel.classList.remove('active'));
+    routeClose.addEventListener('click', () => closeRoutePanel());
   }
 }
 
