@@ -365,13 +365,17 @@ function showDestinationDirectionsCard(targetLngLat, poi, name) {
 async function previewRoute(poi, name) {
   ensureNavigationController();
   if (!navigationController) return;
+      console.log('⚠️ previewRoute: navigationController not initialized!');
   let plan = null;
   try {
-    plan = await navigationController.previewRouteToPoi({
+    pl    console.log('🔍 previewRoute: Starting route calculation for', name, poi);an =
+      await navigationController.previewRouteToPoi({
       poi,
       destinationName: name || poi?.properties?.title || 'Destination'
     });
-  } catch (error) {
+        console.log('✅ previewRoute: Route calculated successfully', plan);
+  }     console.error('❌ previewRoute: Route calculation failed:', error);catch 
+    (error) {
     plan = null;
   }
 
