@@ -55,6 +55,63 @@ function initMap() {
       trackUserLocation: true
     }));
 
+        // Enhanced GPS tracking with live position updates
+    let userMarker = null;
+    let userAccuracyCircle = null;
+    let watchId = null;
+    
+    // Start watching user position
+    if ('geolocation' in navigator) {
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude, accuracy, heading } = position.coords;
+          const lngLat = [longitude, latitude];
+          
+          // Update or create user marker
+          if (!userMarker) {
+            // Create custom user location marker
+            const el = document.createElement('div');
+            el.className = 'user-location-marker';
+            el.innerHTML = '🟢'; // Blue circle emoji
+            el.style.fontSize = '24px';
+            el.style.transform = 'translate(-50%, -50%)';
+            
+            userMarker = new Mazemap.mapboxgl.Marker({ element: el })
+              .setLngLat(lngLat)
+              .addTo(map);
+            
+            // Center map on user location (first time)
+            map.flyTo({ center: lngLat, zoom: 18 });
+            showToast('📍 Your location has been found!', 'success');
+          } else {
+            // Update marker position
+            userMarker.setLngLat(lngLat);
+          }
+          
+          // Rotate marker based on heading if available
+          if (heading !== null && heading !== undefined) {
+            const markerEl = userMarker.getElement();
+            markerEl.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+          }
+          
+          console.log(`📍 User position updated: ${latitude.toFixed(6)}, ${longitude.toFixed(6)} (±${Math.round(accuracy)}m)`);
+        },
+        (error) => {
+          console.error('GPS error:', error);
+          if (error.code === error.PERMISSION_DENIED) {
+            showToast('Please enable location permissions', 'error');
+          } else if (error.code === error.POSITION_UNAVAILABLE) {
+            showToast('Location unavailable', 'error');
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
     map.on('load', () => {
       highlighter = new Mazemap.Highlighter(map, {
         showFill: true,
