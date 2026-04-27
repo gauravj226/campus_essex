@@ -54,10 +54,22 @@ export function getCurrentUserLngLat() {
   return currentUserLngLat;
 }
 
+function resolveMapContainerId() {
+  if (document.getElementById('map')) return 'map';
+  if (document.getElementById('mazemap-container')) return 'mazemap-container';
+  return null;
+}
+
 function initMap() {
+  const containerId = resolveMapContainerId();
+  if (!containerId) {
+    console.error('Map container not found in DOM');
+    return;
+  }
+
   if (typeof Mazemap === 'undefined') {
     console.error('MazeMap not loaded');
-    const mapEl = document.getElementById('map');
+    const mapEl = document.getElementById(containerId);
     if (mapEl) {
       mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2rem;color:#666;">Map loading... please refresh if this persists.</div>';
     }
@@ -66,7 +78,7 @@ function initMap() {
 
   try {
     map = new Mazemap.Map({
-      container: 'map',
+      container: containerId,
       campuses: CAMPUS_ID,
       center: { lng: 0.9439, lat: 51.8767 },
       zoom: 16,
