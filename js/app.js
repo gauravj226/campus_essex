@@ -57,7 +57,7 @@ export function getCurrentUserLngLat() {
 function initMap() {
   if (typeof Mazemap === 'undefined') {
     console.error('MazeMap not loaded');
-    const mapEl = document.getElementById('map');
+    const mapEl = document.getElementById('mazemap-container');
     if (mapEl) {
       mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2rem;color:#666;">Map loading... please refresh if this persists.</div>';
     }
@@ -66,7 +66,7 @@ function initMap() {
 
   try {
     map = new Mazemap.Map({
-      container: 'map',
+      container: 'mazemap-container',
       campuses: CAMPUS_ID,
       center: { lng: 0.9439, lat: 51.8767 },
       zoom: 16,
