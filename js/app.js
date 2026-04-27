@@ -57,7 +57,7 @@ export function getCurrentUserLngLat() {
 function initMap() {
   if (typeof Mazemap === 'undefined') {
     console.error('MazeMap not loaded');
-    const mapEl = document.getElementById('mazemap-container');
+    const mapEl = document.getElementById('map');
     if (mapEl) {
       mapEl.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-size:1.2rem;color:#666;">Map loading... please refresh if this persists.</div>';
     }
@@ -66,7 +66,7 @@ function initMap() {
 
   try {
     map = new Mazemap.Map({
-      container: 'mazemap-container',
+      container: 'map',
       campuses: CAMPUS_ID,
       center: { lng: 0.9439, lat: 51.8767 },
       zoom: 16,
@@ -364,18 +364,19 @@ function showDestinationDirectionsCard(targetLngLat, poi, name) {
 
 async function previewRoute(poi, name) {
   ensureNavigationController();
-  if (!navigationController) return;
-      console.log('⚠️ previewRoute: navigationController not initialized!');
+  if (!navigationController) {
+    console.error('previewRoute: navigationController not initialized');
+    return;
+  }
+
   let plan = null;
   try {
-    pl    console.log('🔍 previewRoute: Starting route calculation for', name, poi);an =
-      await navigationController.previewRouteToPoi({
+    plan = await navigationController.previewRouteToPoi({
       poi,
       destinationName: name || poi?.properties?.title || 'Destination'
     });
-        console.log('✅ previewRoute: Route calculated successfully', plan);
-  }     console.error('❌ previewRoute: Route calculation failed:', error);catch 
-    (error) {
+  } catch (error) {
+    console.error('previewRoute: Route calculation failed:', error);
     plan = null;
   }
 
