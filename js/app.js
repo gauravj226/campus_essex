@@ -223,10 +223,10 @@ async function navigateToPOI(poiId, name) {
     searchMarkers.push(marker);
 
     // Close search
-    // const input = document.getElementById('search-input');
-    // if (input) input.value = name || '';
-    // const results = document.getElementById('search-results');
-    // if (results) results.classList.remove('active');
+    const input = document.getElementById('search-input');
+    if (input) input.value = name || '';
+    const results = document.getElementById('search-results');
+    if (results) results.classList.remove('active');
 
     showRouteInfo(poi, name);
   } catch (e) {
