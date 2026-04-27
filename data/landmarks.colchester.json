@@ -1,0 +1,313 @@
+﻿[
+  {
+    "landmarkId": "silberrad-main-entrance",
+    "name": "Silberrad Student Centre Main Entrance",
+    "type": "entrance",
+    "coordinates": [0.94602, 51.87688],
+    "floor": 0,
+    "description": "Large glass entrance with Student Centre signage near Square 5",
+    "visualCues": ["glass doors", "student centre sign", "red canopy"],
+    "nearbyPOIs": ["student services hub", "learning hub", "cafe"]
+  },
+  {
+    "landmarkId": "silberrad-rear-entrance",
+    "name": "Silberrad Rear Entrance",
+    "type": "entrance",
+    "coordinates": [0.94622, 51.87662],
+    "floor": 0,
+    "description": "Rear access doors facing the lake side footpath",
+    "visualCues": ["rear glass doors", "lake-facing path", "wide paving"],
+    "nearbyPOIs": ["lakeside path", "study areas"]
+  },
+  {
+    "landmarkId": "albert-sloman-library-main",
+    "name": "Albert Sloman Library Main Entrance",
+    "type": "entrance",
+    "coordinates": [0.94488, 51.87695],
+    "floor": 0,
+    "description": "Main library entrance and visitor reception area",
+    "visualCues": ["library sign", "broad steps", "glass frontage"],
+    "nearbyPOIs": ["visitor reception", "library lobby", "study zones"]
+  },
+  {
+    "landmarkId": "library-extension-entrance",
+    "name": "Library Extension Entrance",
+    "type": "entrance",
+    "coordinates": [0.94506, 51.87674],
+    "floor": 0,
+    "description": "Entrance serving the extension wing and lower floors",
+    "visualCues": ["modern extension facade", "double glass doors"],
+    "nearbyPOIs": ["library extension", "lifts", "quiet study"]
+  },
+  {
+    "landmarkId": "hexagon-theatre-front",
+    "name": "Hexagon Theatre Front",
+    "type": "building",
+    "coordinates": [0.94642, 51.87725],
+    "floor": 0,
+    "description": "Distinctive Hexagon venue frontage near central squares",
+    "visualCues": ["hexagon branding", "event posters", "theatre doors"],
+    "nearbyPOIs": ["performance venue", "square 5", "walkway junction"]
+  },
+  {
+    "landmarkId": "sports-centre-entrance",
+    "name": "Sports Centre Main Entrance",
+    "type": "entrance",
+    "coordinates": [0.94762, 51.87642],
+    "floor": 0,
+    "description": "Main entrance to gym, pool and sports halls",
+    "visualCues": ["sports centre sign", "wide plaza", "glass lobby"],
+    "nearbyPOIs": ["sports reception", "gym", "pool"]
+  },
+  {
+    "landmarkId": "essex-sport-arena",
+    "name": "Essex Sport Arena",
+    "type": "building",
+    "coordinates": [0.94826, 51.87603],
+    "floor": 0,
+    "description": "Arena building south-east of the central campus core",
+    "visualCues": ["arena facade", "large venue signage", "open forecourt"],
+    "nearbyPOIs": ["sports entrances", "event access"]
+  },
+  {
+    "landmarkId": "square-4-junction",
+    "name": "Square 4 Central Junction",
+    "type": "junction",
+    "coordinates": [0.94558, 51.87652],
+    "floor": 0,
+    "description": "Busy pedestrian node connecting teaching and food spaces",
+    "visualCues": ["open square", "seating", "multiple walkways"],
+    "nearbyPOIs": ["zest cafe", "teaching centre", "walkways"]
+  },
+  {
+    "landmarkId": "square-5-junction",
+    "name": "Square 5 Junction",
+    "type": "junction",
+    "coordinates": [0.94602, 51.87702],
+    "floor": 0,
+    "description": "Main connector near Library, Hexagon and Silberrad",
+    "visualCues": ["open plaza", "route signage", "pedestrian crossings"],
+    "nearbyPOIs": ["library", "hexagon", "silberrad"]
+  },
+  {
+    "landmarkId": "students-union-entrance",
+    "name": "Students Union Entrance",
+    "type": "entrance",
+    "coordinates": [0.94614, 51.87635],
+    "floor": 0,
+    "description": "Main SU entry facing active student social areas",
+    "visualCues": ["SU branding", "bar signage", "double doors"],
+    "nearbyPOIs": ["su bar", "social spaces", "shops"]
+  },
+  {
+    "landmarkId": "bus-stop-university-drive",
+    "name": "Campus Bus Stop (University Drive)",
+    "type": "transport",
+    "coordinates": [0.94423, 51.87635],
+    "floor": 0,
+    "description": "Primary bus boarding stop on campus edge road",
+    "visualCues": ["bus shelter", "bus stop flag", "roadside curb"],
+    "nearbyPOIs": ["travel routes", "campus edge"]
+  },
+  {
+    "landmarkId": "car-park-cp1",
+    "name": "Car Park CP1",
+    "type": "parking",
+    "coordinates": [0.94444, 51.87715],
+    "floor": 0,
+    "description": "Main visitor and short-stay parking area near library",
+    "visualCues": ["car park signage", "barrier entry", "marked bays"],
+    "nearbyPOIs": ["library", "visitor reception"]
+  },
+  {
+    "landmarkId": "car-park-cp5",
+    "name": "Car Park CP5",
+    "type": "parking",
+    "coordinates": [0.94704, 51.87606],
+    "floor": 0,
+    "description": "Parking area near Square 4 and sports routes",
+    "visualCues": ["CP5 sign", "entry barrier", "pedestrian exit route"],
+    "nearbyPOIs": ["sports centre", "square 4"]
+  },
+  {
+    "landmarkId": "wivenhoe-lake-path",
+    "name": "Wivenhoe Park Lake Path",
+    "type": "outdoor",
+    "coordinates": [0.94658, 51.87694],
+    "floor": 0,
+    "description": "Lakeside pedestrian path used as orientation feature",
+    "visualCues": ["waterfront", "railing", "tree-lined path"],
+    "nearbyPOIs": ["silberrad", "study spots"]
+  },
+  {
+    "landmarkId": "essex-business-school-entrance",
+    "name": "Essex Business School Entrance",
+    "type": "entrance",
+    "coordinates": [0.94802, 51.87575],
+    "floor": 0,
+    "description": "Distinctive business school entrance near south-east section",
+    "visualCues": ["modern facade", "business school sign", "wide doors"],
+    "nearbyPOIs": ["teaching rooms", "lifts"]
+  },
+  {
+    "landmarkId": "north-teaching-centre",
+    "name": "North Teaching Centre Entrance",
+    "type": "entrance",
+    "coordinates": [0.94536, 51.87676],
+    "floor": 0,
+    "description": "North Teaching Centre entry toward central squares",
+    "visualCues": ["teaching centre sign", "glass entry", "wayfinding boards"],
+    "nearbyPOIs": ["lecture rooms", "lobbies"]
+  },
+  {
+    "landmarkId": "tony-rich-plaza-entrance",
+    "name": "Tony Rich Teaching Centre Plaza Entrance",
+    "type": "entrance",
+    "coordinates": [0.94524, 51.87612],
+    "floor": 0,
+    "description": "Plaza-facing entrance to Tony Rich Teaching Centre",
+    "visualCues": ["plaza frontage", "automatic doors", "signage"],
+    "nearbyPOIs": ["teaching rooms", "study spaces"]
+  },
+  {
+    "landmarkId": "ivor-crewe-entrance",
+    "name": "Ivor Crewe Lecture Hall Entrance",
+    "type": "entrance",
+    "coordinates": [0.94674, 51.87702],
+    "floor": 0,
+    "description": "Main entry to Ivor Crewe lecture spaces",
+    "visualCues": ["lecture hall sign", "broad stair", "event posters"],
+    "nearbyPOIs": ["lecture halls", "foyer"]
+  },
+  {
+    "landmarkId": "art-exchange-front",
+    "name": "Art Exchange Front",
+    "type": "building",
+    "coordinates": [0.94632, 51.87655],
+    "floor": 0,
+    "description": "Gallery frontage used as visual reference point",
+    "visualCues": ["gallery sign", "display windows", "open forecourt"],
+    "nearbyPOIs": ["events", "square routes"]
+  },
+  {
+    "landmarkId": "silberrad-lift-front",
+    "name": "Silberrad Front Lift",
+    "type": "lift",
+    "coordinates": [0.94603, 51.87683],
+    "floor": 0,
+    "description": "Front lift core for step-free movement in Silberrad",
+    "visualCues": ["lift lobby", "access signage", "card doors"],
+    "nearbyPOIs": ["silberrad entrance", "student services"]
+  },
+  {
+    "landmarkId": "silberrad-lift-rear",
+    "name": "Silberrad Rear Lift",
+    "type": "lift",
+    "coordinates": [0.94617, 51.87667],
+    "floor": 0,
+    "description": "Rear lift for alternate step-free route",
+    "visualCues": ["rear corridor", "lift doors", "access signage"],
+    "nearbyPOIs": ["learning hub", "study spaces"]
+  },
+  {
+    "landmarkId": "library-lift-core",
+    "name": "Library Lift Core",
+    "type": "lift",
+    "coordinates": [0.94494, 51.87685],
+    "floor": 0,
+    "description": "Main internal lift bank in Albert Sloman Library",
+    "visualCues": ["lift signs", "floor indicators", "lobby desk"],
+    "nearbyPOIs": ["reception", "study floors"]
+  },
+  {
+    "landmarkId": "campus-reception-library",
+    "name": "Visitors Reception (Library)",
+    "type": "reception",
+    "coordinates": [0.94486, 51.87689],
+    "floor": 0,
+    "description": "Visitors reception desk located in the Library",
+    "visualCues": ["reception desk", "welcome signage", "queue area"],
+    "nearbyPOIs": ["library entrance", "information desk"]
+  },
+  {
+    "landmarkId": "silberrad-reception",
+    "name": "Silberrad Reception Desk",
+    "type": "reception",
+    "coordinates": [0.94605, 51.87682],
+    "floor": 0,
+    "description": "Student support reception near main entrance",
+    "visualCues": ["front desk", "digital screens", "service counters"],
+    "nearbyPOIs": ["student hub", "learning hub"]
+  },
+  {
+    "landmarkId": "glass-corridor-square5",
+    "name": "Glass Corridor by Square 5",
+    "type": "corridor",
+    "coordinates": [0.94582, 51.87696],
+    "floor": 0,
+    "description": "Recognisable glazed corridor linking square-side buildings",
+    "visualCues": ["glass corridor", "long sightline", "double doors"],
+    "nearbyPOIs": ["library", "silberrad", "hexagon"]
+  },
+  {
+    "landmarkId": "two-sets-glass-doors-library",
+    "name": "Library Double Glass Door Sequence",
+    "type": "door",
+    "coordinates": [0.94489, 51.87693],
+    "floor": 0,
+    "description": "Two consecutive glass door sets at the library entry",
+    "visualCues": ["two sets of doors", "glass vestibule", "access control"],
+    "nearbyPOIs": ["library reception", "lobby"]
+  },
+  {
+    "landmarkId": "vending-point-silberrad",
+    "name": "Silberrad Vending Point",
+    "type": "vending",
+    "coordinates": [0.94608, 51.87678],
+    "floor": 0,
+    "description": "Vending machine cluster near study circulation route",
+    "visualCues": ["vending machines", "bright machine lights", "snack area"],
+    "nearbyPOIs": ["learning hub", "corridor"]
+  },
+  {
+    "landmarkId": "noticeboard-square4",
+    "name": "Square 4 Notice Board Zone",
+    "type": "noticeboard",
+    "coordinates": [0.94549, 51.87644],
+    "floor": 0,
+    "description": "Distinctive notice board area used as meeting reference",
+    "visualCues": ["notice boards", "poster wall", "open corridor"],
+    "nearbyPOIs": ["food outlets", "teaching spaces"]
+  },
+  {
+    "landmarkId": "bench-cluster-square5",
+    "name": "Square 5 Bench Cluster",
+    "type": "outdoor",
+    "coordinates": [0.94595, 51.87708],
+    "floor": 0,
+    "description": "Outdoor benches frequently used as waiting landmark",
+    "visualCues": ["wood benches", "open plaza", "tree cover"],
+    "nearbyPOIs": ["library", "hexagon"]
+  },
+  {
+    "landmarkId": "red-building-cue",
+    "name": "Red Brick Building Cue",
+    "type": "visual-cue",
+    "coordinates": [0.94535, 51.87658],
+    "floor": 0,
+    "description": "Distinct red brick facade used in spoken wayfinding",
+    "visualCues": ["red building", "brick facade", "angular corner"],
+    "nearbyPOIs": ["square 4", "teaching centre"]
+  },
+  {
+    "landmarkId": "main-roundabout-entry",
+    "name": "Main Campus Roundabout Entry",
+    "type": "entry-point",
+    "coordinates": [0.94378, 51.87634],
+    "floor": 0,
+    "description": "Vehicle and pedestrian reference near primary campus approach",
+    "visualCues": ["roundabout", "entry signs", "crossing point"],
+    "nearbyPOIs": ["bus stop", "car parks"]
+  }
+]
+

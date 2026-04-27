@@ -761,3 +761,116 @@ body{
 .result-building { font-size: 0.85rem; color: #888; }
 .result-fav { font-size: 1.2rem; background: none; border: none; cursor: pointer; }
 .no-results { padding: 20px; text-align: center; color: #888; }
+
+/* Live Navigation Panel */
+.navigation-panel {
+  position: fixed;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  margin: 0 auto;
+  max-width: 900px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid #dce5ef;
+  border-radius: 14px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+  padding: 14px 16px;
+  z-index: 1300;
+  display: none;
+}
+.navigation-panel.active { display: block; }
+.nav-primary-row {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+.nav-arrow {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #1e88e5;
+  color: #fff;
+  font-size: 1.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+.nav-current-instruction {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f2d48;
+  line-height: 1.4;
+}
+.nav-next-instruction {
+  margin-top: 4px;
+  color: #4d6278;
+  font-size: 0.9rem;
+}
+.nav-compass-wrap { text-align: right; }
+.nav-compass-label { color: #73879c; font-size: 0.75rem; }
+.nav-compass { color: #0f2d48; font-weight: 700; font-size: 1rem; }
+.nav-meta {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: #4d6278;
+  font-size: 0.9rem;
+}
+.nav-progress-track {
+  margin-top: 10px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #ebf2f8;
+  overflow: hidden;
+}
+.nav-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #00a651, #1e88e5);
+  transition: width 0.2s ease;
+}
+.nav-controls {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav-control-btn {
+  border: 1px solid #c9d6e3;
+  background: #fff;
+  color: #0f2d48;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 0.86rem;
+  cursor: pointer;
+}
+.nav-control-btn:hover { background: #f4f8fb; }
+.nav-control-btn.danger {
+  border-color: #f3c4c4;
+  color: #8b2222;
+  background: #fff7f7;
+}
+
+@media(max-width:768px){
+  .navigation-panel {
+    left: 10px;
+    right: 10px;
+    bottom: 12px;
+    padding: 12px;
+  }
+  .nav-primary-row {
+    grid-template-columns: 48px 1fr;
+    gap: 10px;
+  }
+  .nav-compass-wrap {
+    grid-column: 1 / -1;
+    text-align: left;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+}

@@ -23,6 +23,12 @@ window.addEventListener('save-favourite', e => {
   promptNickname(name, poi);
 });
 
+// Called by app.js when user taps the star on a search result.
+window.addFavourite = function addFavouriteFromSearch(payload) {
+  if (!payload?.name) return;
+  promptNickname(payload.name, payload);
+};
+
 function getFavourites() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
   catch { return []; }
@@ -88,8 +94,8 @@ function renderFavourites() {
       </div>`;
 
     item.querySelector('.fav-info').addEventListener('click', () => {
-      if (fav.poi) {
-        navigateToPOI(fav.poi);
+      if (fav.poi?.poiId) {
+        navigateToPOI(fav.poi.poiId, fav.originalName || fav.nickname);
         favPanel.classList.remove('active');
       }
     });

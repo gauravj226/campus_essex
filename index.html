@@ -86,6 +86,34 @@
     <div id="route-content" class="route-content"></div>
   </div>
 
+  <div id="navigation-panel" class="navigation-panel" aria-live="polite">
+    <div class="nav-primary-row">
+      <div id="nav-arrow" class="nav-arrow" aria-hidden="true">↑</div>
+      <div class="nav-copy">
+        <div id="nav-current-instruction" class="nav-current-instruction">Start navigation to see turn-by-turn guidance.</div>
+        <div id="nav-next-instruction" class="nav-next-instruction">Next: Waiting for route</div>
+      </div>
+      <div class="nav-compass-wrap">
+        <div class="nav-compass-label">Heading</div>
+        <div id="nav-compass" class="nav-compass">--°</div>
+      </div>
+    </div>
+    <div class="nav-meta">
+      <div>Distance: <strong id="nav-distance">0m</strong></div>
+      <div>Time: <strong id="nav-time">0 min</strong></div>
+      <div id="nav-progress-text">Step 0 of 0</div>
+    </div>
+    <div class="nav-progress-track">
+      <div id="nav-progress-fill" class="nav-progress-fill"></div>
+    </div>
+    <div class="nav-controls">
+      <button id="nav-prev-btn" class="nav-control-btn" type="button">Back</button>
+      <button id="nav-next-btn" class="nav-control-btn" type="button">Skip</button>
+      <button id="nav-mute-btn" class="nav-control-btn" type="button">Mute</button>
+      <button id="nav-stop-btn" class="nav-control-btn danger" type="button">Stop</button>
+    </div>
+  </div>
+
   <div id="accessibility-banner" class="accessibility-banner">
     &#9855; Accessibility mode: Step-free routes prioritised
   </div>
