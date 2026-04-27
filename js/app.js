@@ -8,6 +8,7 @@ let map = null;
 let highlighter = null;
 let pathfinder = null;
 let accessibilityMode = false;
+let searchMarkers = []; // Track search result markers
 
 // Make showToast globally available for other modules
 window.showToast = function(msg, type = 'info', duration = 3500) {
@@ -202,11 +203,30 @@ async function navigateToPOI(poiId, name) {
     map.setZLevel(poi.properties.zLevel || 1);
     highlighter.highlight(poi);
 
+        // Add permanent marker for the searched location
+    // Clear previous search markers
+    searchMarkers.forEach(m => m.remove());
+    searchMarkers = [];
+    
+    // Create new marker
+    const el = document.createElement('div');
+    el.className = 'search-result-marker';
+    el.innerHTML = '📍'; // Pin emoji
+    el.style.fontSize = '32px';
+    el.style.transform = 'translate(-50%, -100%)';
+    el.title = name;
+    
+    const marker = new Mazemap.mapboxgl.Marker({ element: el })
+      .setLngLat(lngLat)
+      .addTo(map);
+    
+    searchMarkers.push(marker);
+
     // Close search
-    const input = document.getElementById('search-input');
-    if (input) input.value = name || '';
-    const results = document.getElementById('search-results');
-    if (results) results.classList.remove('active');
+    // const input = document.getElementById('search-input');
+    // if (input) input.value = name || '';
+    // const results = document.getElementById('search-results');
+    // if (results) results.classList.remove('active');
 
     showRouteInfo(poi, name);
   } catch (e) {
