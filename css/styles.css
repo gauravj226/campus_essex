@@ -881,8 +881,8 @@ body{
 
 /* Animated Cat Marker */
 .cat-marker {
-  width: 52px;
-  height: 52px;
+  width: 64px;
+  height: 64px;
   position: relative;
   transform-origin: center center;
   pointer-events: none;
@@ -901,35 +901,30 @@ body{
 
 .cat-sprite {
   position: absolute;
-  left: 2px;
-  top: 1px;
-  width: 48px;
-  height: 48px;
-  background-image: url('../assets/cat-walk-sprite.svg');
-  background-size: 384px 48px;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  transform: translate(-50%, -50%);
+  background-image: url('../assets/3d_sprite_sheet.webp');
+  background-size: 384px 320px; /* 6 columns * 64px, 5 rows * 64px */
   background-repeat: no-repeat;
   background-position: 0 0;
-  transform-origin: center bottom;
-  animation: cat-idle 2s ease-in-out infinite;
-}
-
-.cat-sprite.facing-left {
-  transform: scaleX(-1);
+  image-rendering: auto;
 }
 
 .cat-sprite.moving {
-  animation: cat-walk 0.8s steps(8) infinite;
+  animation: cat-walk-3d 0.8s steps(6) infinite;
 }
 
 .cat-sprite.idle {
-  background-image: url('../assets/cat-idle.svg');
-  background-size: contain;
-  animation: cat-idle 2s ease-in-out infinite;
+  background-position: 0 0;
+  animation: none;
 }
 
-@keyframes cat-walk {
-  0% { background-position: 0 0; }
-  100% { background-position: -384px 0; }
+@keyframes cat-walk-3d {
+  from { background-position: 0 0; }
+  to { background-position: -384px 0; }
 }
 @keyframes cat-idle {
   0%, 100% { transform: translateY(0); }

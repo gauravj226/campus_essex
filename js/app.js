@@ -243,25 +243,24 @@ function updateCatMarkerState({ heading, speed }) {
   if (!userMarker || !catSprite) return;
 
   const markerElement = userMarker.getElement();
+  
+  // Update the row based on heading (5 rows for different angles)
   if (Number.isFinite(heading)) {
-    markerElement.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+    // Map 0-360 to 0-4 rows
+    // Row 0: 0-72, Row 1: 72-144, Row 2: 144-216, Row 3: 216-288, Row 4: 288-360
+    const row = Math.min(4, Math.floor(((heading + 360) % 360) / 72));
+    catSprite.style.backgroundPositionY = `-${row * 64}px`;
   }
 
   const moving = Number.isFinite(speed) ? speed > 0.3 : false;
   catSprite.classList.toggle('idle', !moving);
   catSprite.classList.toggle('moving', moving);
 
-  if (moving && speed > 2) {
-    catSprite.style.animationDuration = '0.42s';
-  } else if (moving && speed > 0.7) {
-    catSprite.style.animationDuration = '0.72s';
-  } else if (moving) {
-    catSprite.style.animationDuration = '0.95s';
-  } else {
-    catSprite.style.animationDuration = '2.0s';
+  if (moving) {
+    if (speed > 2) catSprite.style.animationDuration = '0.4s';
+    else if (speed > 0.7) catSprite.style.animationDuration = '0.7s';
+    else catSprite.style.animationDuration = '1.0s';
   }
-
-  catSprite.classList.toggle('facing-left', Number.isFinite(heading) && heading >= 90 && heading <= 270);
 }
 
 function handleMapClick() {
