@@ -232,15 +232,21 @@ class NavigationController {
     const accessible = Boolean(this.getAccessibilityMode?.());
 
     try {
-      // In Mazemap JS SDK v2, the recommended way is using Mazemap.Data.getPoiRoute
-      // or map.getRoute if available.
+      // Use Mazemap.Data.getRoute with full options to ensure campus paths are used.
+      // We also specify the campusId if available to improve routing precision.
       let rawRoute;
-      if (typeof Mazemap !== 'undefined' && Mazemap.Data && Mazemap.Data.getRoute) {
-        rawRoute = await Mazemap.Data.getRoute(from, to, { accessible });
-      } else if (this.map && this.map.getRoute) {
-        rawRoute = await this.map.getRoute(from, to, { accessible });
-      } else if (this.pathfinder && typeof this.pathfinder.getRoute === 'function') {
-        rawRoute = await this.pathfinder.getRoute(from, to, { accessible });
+      const routeOptions = {
+        accessible: accessible,
+        campusId: 2195, // University of Essex Colchester Campus
+        fullBarriers: true,
+        distanceUnit: 'metric'
+      };
+
+      if (typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getRoute === 'function') {
+        // Mazemap.Data.getRoute(start, end, options)
+        rawRoute = await Mazemap.Data.getRoute(from, to, routeOptions);
+      } else if (this.map && typeof this.map.getRoute === 'function') {
+        rawRoute = await this.map.getRoute(from, to, routeOptions);
       }
 
       if (rawRoute) {
