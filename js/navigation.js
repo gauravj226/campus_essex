@@ -232,21 +232,33 @@ class NavigationController {
     const accessible = Boolean(this.getAccessibilityMode?.());
 
     try {
-      // Use Mazemap.Data.getRoute with full options to ensure campus paths are used.
-      // We also specify the campusId if available to improve routing precision.
       let rawRoute;
-      const routeOptions = {
-        accessible: accessible,
-        campusId: 2195, // University of Essex Colchester Campus
-        fullBarriers: true,
-        distanceUnit: 'metric'
-      };
+      
+      const fromObj = { lng: from[0], lat: from[1] };
+      const toObj = { lng: to[0], lat: to[1] };
+      const options = { accessible, campusId: 2195 };
 
+      // Attempt to get route via MazeMap Data API (preferred)
       if (typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getRoute === 'function') {
-        // Mazemap.Data.getRoute(start, end, options)
-        rawRoute = await Mazemap.Data.getRoute(from, to, routeOptions);
-      } else if (this.map && typeof this.map.getRoute === 'function') {
-        rawRoute = await this.map.getRoute(from, to, routeOptions);
+        const attempts = [
+          () => Mazemap.Data.getRoute(fromObj, toObj, options),
+          () => Mazemap.Data.getRoute(from, to, options),
+          () => Mazemap.Data.getRoute({ from: fromObj, to: toObj, ...options })
+        ];
+
+        for (const attempt of attempts) {
+          try {
+            rawRoute = await attempt();
+            if (rawRoute && (rawRoute.geometry || rawRoute.features || rawRoute.path)) break;
+          } catch (e) { /* continue to next attempt */ }
+        }
+      }
+
+      // Fallback to map instance routing if Data API fails
+      if (!rawRoute && this.map && typeof this.map.getRoute === 'function') {
+        try {
+          rawRoute = await this.map.getRoute(fromObj, toObj, { accessible });
+        } catch (e) { /* fallback to direct */ }
       }
 
       if (rawRoute) {
@@ -254,9 +266,10 @@ class NavigationController {
         if (normalized.length > 1) return normalized;
       }
     } catch (error) {
-      console.warn('Routing API error, falling back to direct route:', error);
+      console.warn('Routing engine error:', error);
     }
 
+    // Return direct line fallback if all routing attempts fail
     return this.buildDirectFallbackRoute(fromLngLat, toLngLat);
   }
 
@@ -798,18 +811,24 @@ class NavigationController {
   extractPoiLngLat(poi) {
     if (!poi) return null;
 
+    // Use Mazemap utility if available
     try {
-      const lngLat = window.Mazemap?.Util?.getPoiLngLat?.(poi);
-      const normalized = normalizePoint(lngLat);
-      if (normalized) return normalized;
-    } catch (error) {
-      // fall through to metadata coordinates.
-    }
+      if (window.Mazemap?.Util?.getPoiLngLat) {
+        const lngLat = window.Mazemap.Util.getPoiLngLat(poi);
+        const normalized = normalizePoint(lngLat);
+        if (normalized) return normalized;
+      }
+    } catch (error) { /* ignore */ }
 
+    // Manual extraction from various possible structures
     const candidates = [
-      poi?.geometry?.coordinates,
-      poi?.properties?.coordinates,
-      poi?.coordinates
+      poi.geometry?.coordinates,
+      poi.properties?.coordinates,
+      poi.coordinates,
+      // Handle search result objects which might have point property
+      poi.point?.coordinates,
+      [poi.lng, poi.lat],
+      [poi.longitude, poi.latitude]
     ];
 
     for (const candidate of candidates) {
@@ -824,18 +843,24 @@ class NavigationController {
 function normalizeRoutePoints(rawRoute) {
   if (!rawRoute) return [];
 
+  // MazeMap API often returns a 'geometry' object or 'features' array
+  // Sometimes it's a simple 'path' or 'points' array.
   const directCandidates = [
-    rawRoute?.path,
-    rawRoute?.points,
-    rawRoute?.waypoints,
-    rawRoute?.geometry?.coordinates,
-    rawRoute?.features?.[0]?.geometry?.coordinates
+    rawRoute.geometry?.coordinates,
+    rawRoute.features?.[0]?.geometry?.coordinates,
+    rawRoute.path,
+    rawRoute.points,
+    rawRoute.waypoints,
+    // Check for nested properties in common MazeMap response structures
+    rawRoute.route?.geometry?.coordinates,
+    rawRoute.result?.geometry?.coordinates
   ];
 
   for (const candidate of directCandidates) {
-    if (!Array.isArray(candidate)) continue;
-    const flattened = flattenCoordinates(candidate);
-    const points = flattened.map(normalizePoint).filter(Boolean);
+    if (!candidate || !Array.isArray(candidate)) continue;
+    
+    // Some APIs return [lng, lat] pairs, others return objects
+    const points = candidate.map(normalizePoint).filter(Boolean);
 
     if (points.length > 1) return dedupeSequential(points);
   }
