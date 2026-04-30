@@ -249,19 +249,22 @@ class NavigationController {
       const toObj = { lng: to[0], lat: to[1] };
 
       // Replicate findyourway.essex.ac.uk's use of getAtoBTrip
-      if (typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getAtoBTrip === 'function') {
+      if (typeof Mazemap !== 'undefined' && Mazemap.Data?.getAtoBTrip) {
+        const currentZLevel = this.map.getZLevel?.() ?? 1;
         try {
           const trip = await Mazemap.Data.getAtoBTrip({
-            ...routingParams,
-            fromLngLatZ: from.length > 2 ? from : [...from, 0],
-            toLngLatZ: to.length > 2 ? to : [...to, 0]
+            mode: 'PEDESTRIAN',
+            campusId: 2195,
+            fromLngLatZ: { lng: from[0], lat: from[1], zLevel: currentZLevel },
+            toLngLatZ:   { lng: to[0],   lat: to[1],   zLevel: currentZLevel },
           });
-          
-          if (trip && trip.geometry) {
-            rawRoute = trip;
+          if (trip?.geometry) {
+            this.lastRawTrip = trip;
+            const normalized = normalizeRoutePoints(trip);
+            if (normalized.length > 1) return normalized;
           }
         } catch (e) {
-          console.warn('getAtoBTrip failed, trying fallback methods...');
+          console.error('getAtoBTrip failed:', e); // surface the real error
         }
       }
 
