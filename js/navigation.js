@@ -103,7 +103,8 @@ class NavigationController {
         : this.buildHumanizedInstructions(
             planData.routePoints,
             (planData.destination?.name || destinationName || poi?.properties?.title || 'Destination'),
-            poi || planData.destination?.poi
+            poi || planData.destination?.poi,
+            planData.rawTrip // Pass raw trip if available
           )
     };
 
@@ -162,7 +163,7 @@ class NavigationController {
     if (!routePoints.length) return null;
 
     const name = destinationName || poi?.properties?.title || 'Destination';
-    const instructions = this.buildHumanizedInstructions(routePoints, name, poi);
+    const instructions = this.buildHumanizedInstructions(routePoints, name, poi, this.lastRawTrip);
     const distanceMeters = cumulativeDistanceMeters(routePoints);
     const etaMinutes = estimateWalkTimeMinutes(distanceMeters);
 
@@ -172,7 +173,8 @@ class NavigationController {
       routePoints,
       instructions,
       distanceMeters,
-      etaMinutes
+      etaMinutes,
+      rawTrip: this.lastRawTrip
     };
   }
 
@@ -234,34 +236,44 @@ class NavigationController {
     try {
       let rawRoute;
       
+      // University of Essex specific configuration
+      const routingParams = {
+        mode: 'PEDESTRIAN',
+        constraint: accessible ? 'PREFER_ACCESSIBLE' : 'DEFAULT',
+        campusCollectionTag: 'essex',
+        campusId: 2195,
+        lang: 'en'
+      };
+
       const fromObj = { lng: from[0], lat: from[1] };
       const toObj = { lng: to[0], lat: to[1] };
-      const options = { accessible, campusId: 2195 };
 
-      // Attempt to get route via MazeMap Data API (preferred)
-      if (typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getRoute === 'function') {
-        const attempts = [
-          () => Mazemap.Data.getRoute(fromObj, toObj, options),
-          () => Mazemap.Data.getRoute(from, to, options),
-          () => Mazemap.Data.getRoute({ from: fromObj, to: toObj, ...options })
-        ];
-
-        for (const attempt of attempts) {
-          try {
-            rawRoute = await attempt();
-            if (rawRoute && (rawRoute.geometry || rawRoute.features || rawRoute.path)) break;
-          } catch (e) { /* continue to next attempt */ }
+      // Replicate findyourway.essex.ac.uk's use of getAtoBTrip
+      if (typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getAtoBTrip === 'function') {
+        try {
+          const trip = await Mazemap.Data.getAtoBTrip({
+            ...routingParams,
+            fromLngLatZ: from.length > 2 ? from : [...from, 0],
+            toLngLatZ: to.length > 2 ? to : [...to, 0]
+          });
+          
+          if (trip && trip.geometry) {
+            rawRoute = trip;
+          }
+        } catch (e) {
+          console.warn('getAtoBTrip failed, trying fallback methods...');
         }
       }
 
-      // Fallback to map instance routing if Data API fails
-      if (!rawRoute && this.map && typeof this.map.getRoute === 'function') {
+      // Fallback to standard getRoute if getAtoBTrip fails
+      if (!rawRoute && typeof Mazemap !== 'undefined' && Mazemap.Data && typeof Mazemap.Data.getRoute === 'function') {
         try {
-          rawRoute = await this.map.getRoute(fromObj, toObj, { accessible });
-        } catch (e) { /* fallback to direct */ }
+          rawRoute = await Mazemap.Data.getRoute(fromObj, toObj, { accessible, campusId: 2195 });
+        } catch (e) { /* try next */ }
       }
 
       if (rawRoute) {
+        this.lastRawTrip = rawRoute;
         const normalized = normalizeRoutePoints(rawRoute);
         if (normalized.length > 1) return normalized;
       }
@@ -269,7 +281,6 @@ class NavigationController {
       console.warn('Routing engine error:', error);
     }
 
-    // Return direct line fallback if all routing attempts fail
     return this.buildDirectFallbackRoute(fromLngLat, toLngLat);
   }
 
@@ -313,8 +324,28 @@ class NavigationController {
     return route;
   }
 
-  buildHumanizedInstructions(routePoints, destinationName, destinationPoi) {
+  buildHumanizedInstructions(routePoints, destinationName, destinationPoi, rawTrip = null) {
     if (!Array.isArray(routePoints) || routePoints.length === 0) return [];
+
+    // Replicate findyourway.essex.ac.uk's use of MazeMap trip instructions if available
+    if (rawTrip && typeof rawTrip.getInstructionsSteps === 'function') {
+      try {
+        const steps = rawTrip.getInstructionsSteps();
+        if (Array.isArray(steps) && steps.length > 0) {
+          return steps.map((step, i) => ({
+            index: i,
+            point: step.geometry.coordinates[0],
+            text: step.instruction,
+            turnType: step.type || 'straight',
+            segmentDistance: step.distance || 0,
+            etaMinutes: estimateWalkTimeMinutes(step.distance || 0),
+            landmark: null // Could be enriched if needed
+          }));
+        }
+      } catch (e) {
+        console.warn('Failed to use trip instructions, falling back to humanized generator');
+      }
+    }
 
     if (routePoints.length === 1) {
       return [{
