@@ -591,57 +591,59 @@ function initRoutePlanner() {
 
   // ── Search & Dropdown ────────────────────────────────────────────
   async function runSearch(query, targetInput) {
-    if (!query || query.length < 2) { closeDropdown(); return; }
+  if (!query || query.length < 2) { closeDropdown(); return; }
 
-    let results = [];
-    try {
-      const response = await Mazemap.Search.search({
-        query,
-        campusid: CAMPUS_ID,
-        rows: 8,
-        withpois: true,
-        withbuilding: true,
-        withtype: true,
-        withcampus: false,
-      });
-      results = response?.results || response?.features || [];
-    } catch (e) {
-      console.warn('Search error:', e);
-    }
+  let results = [];
+  try {
+    results = await fetchPOIs(query);  // ← uses the working REST API already in your file
+  } catch (e) {
+    console.warn('Search error:', e);
+  }
 
-    if (!results.length) { closeDropdown(); return; }
+  if (!results.length) { closeDropdown(); return; }
 
-    resultsDropdown.innerHTML = '';
-    resultsDropdown.classList.add('active');
+  resultsDropdown.innerHTML = '';
+  resultsDropdown.classList.add('active');
 
-    results.forEach(result => {
-      const name   = result.properties?.title || result.properties?.name || 'Unknown';
-      const detail = result.properties?.buildingName || result.properties?.campusName || '';
-      const li     = document.createElement('div');
-      li.className = 'search-result-item';
-      li.setAttribute('role', 'option');
-      li.innerHTML = `<span class="result-name">${escapeHtml(name)}</span>${detail ? `<span class="result-detail">${escapeHtml(detail)}</span>` : ''}`;
+  results.forEach(result => {
+    const name   = result.title || result.name || 'Unknown';
+    const detail = result.buildingName || '';
 
-      li.addEventListener('click', () => {
-        const lngLat = extractLngLatFromResult(result);
-        if (!lngLat) return;
-        const loc = { name, lngLat, poi: result };
+    const li = document.createElement('div');
+    li.className = 'search-result-item';
+    li.setAttribute('role', 'option');
+    li.innerHTML = `
+      <span class="result-name">${escapeHtml(name)}</span>
+      ${detail ? `<span class="result-detail">${escapeHtml(detail)}</span>` : ''}
+    `;
+
+    li.addEventListener('click', async () => {
+      closeDropdown();
+      if (!result.poiId) return;
+
+      li.textContent = 'Loading…';
+      try {
+        // Resolve full POI + coordinates — same pattern as navigateToPOI()
+        const poi      = await Mazemap.Data.getPoi(result.poiId);
+        const lngLatObj = Mazemap.Util.getPoiLngLat(poi);
+        const lngLat   = [
+          lngLatObj.lng ?? lngLatObj[0],
+          lngLatObj.lat ?? lngLatObj[1]
+        ];
+        const loc = { name, lngLat, poi };
         if (targetInput === 'from') setFromLocation(loc);
         else                        setToLocation(loc);
-        closeDropdown();
-      });
-
-      resultsDropdown.appendChild(li);
+      } catch (e) {
+        console.warn('Could not load POI details:', e);
+        showToast('Could not load location details', 'error');
+      }
     });
-  }
 
-  function extractLngLatFromResult(result) {
-    const coords = result.geometry?.coordinates
-      || result.properties?.coordinates;
-    if (coords && coords.length >= 2)
-      return [coords[0], coords[1]];
-    return null;
-  }
+    resultsDropdown.appendChild(li);
+  });
+}
+
+  
 
   // ── Input listeners ──────────────────────────────────────────────
   fromInput.addEventListener('focus', () => { activeInput = 'from'; });
