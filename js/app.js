@@ -129,6 +129,8 @@ function initMap() {
       pathfinder = map;
       ensureNavigationController();
 
+      initRoutePlanner();
+
       window.showToast('Campus map loaded! Search for any location.', 'success');
       console.log('Essex Navigator ready | Campus ID:', CAMPUS_ID);
     });
@@ -547,60 +549,183 @@ function distanceMeters(from, to) {
   return R * c;
 }
 
-function setupSearch() {
-  const input = document.getElementById('search-input');
-  const button = document.getElementById('search-btn');
-  const results = document.getElementById('search-results');
+function initRoutePlanner() {
+  // ── From / To State ──────────────────────────────────────────────
+  let fromLocation = null; // { name, lngLat: [lng, lat] }
+  let toLocation   = null; // { name, lngLat: [lng, lat], poi }
+  let activeInput  = null; // 'from' | 'to'
 
-  if (!input) return;
+  const fromInput       = document.getElementById('from-input');
+  const toInput         = document.getElementById('to-input');
+  const resultsDropdown = document.getElementById('search-results');
+  const getDirectionsBtn= document.getElementById('get-directions-btn');
+  const swapBtn         = document.getElementById('swap-btn');
+  const useLocationBtn  = document.getElementById('use-location-btn');
+
+  if (!fromInput || !toInput) return;
+
+  // ── Helpers ──────────────────────────────────────────────────────
+  function setFromLocation(loc) {
+    fromLocation = loc;
+    fromInput.value = loc?.name || '';
+    refreshDirectionsBtn();
+  }
+
+  function setToLocation(loc) {
+    toLocation = loc;
+    toInput.value = loc?.name || '';
+    refreshDirectionsBtn();
+  }
+
+  function refreshDirectionsBtn() {
+    // Enable when we have at least a destination
+    if (getDirectionsBtn) getDirectionsBtn.disabled = !toLocation;
+  }
+
+  function closeDropdown() {
+    if (resultsDropdown) {
+      resultsDropdown.innerHTML = '';
+      resultsDropdown.classList.remove('active');
+    }
+  }
+
+  // ── Search & Dropdown ────────────────────────────────────────────
+  async function runSearch(query, targetInput) {
+    if (!query || query.length < 2) { closeDropdown(); return; }
+
+    let results = [];
+    try {
+      const response = await Mazemap.Search.search({
+        query,
+        campusid: CAMPUS_ID,
+        rows: 8,
+        withpois: true,
+        withbuilding: true,
+        withtype: true,
+        withcampus: false,
+      });
+      results = response?.results || response?.features || [];
+    } catch (e) {
+      console.warn('Search error:', e);
+    }
+
+    if (!results.length) { closeDropdown(); return; }
+
+    resultsDropdown.innerHTML = '';
+    resultsDropdown.classList.add('active');
+
+    results.forEach(result => {
+      const name   = result.properties?.title || result.properties?.name || 'Unknown';
+      const detail = result.properties?.buildingName || result.properties?.campusName || '';
+      const li     = document.createElement('div');
+      li.className = 'search-result-item';
+      li.setAttribute('role', 'option');
+      li.innerHTML = `<span class="result-name">${escapeHtml(name)}</span>${detail ? `<span class="result-detail">${escapeHtml(detail)}</span>` : ''}`;
+
+      li.addEventListener('click', () => {
+        const lngLat = extractLngLatFromResult(result);
+        if (!lngLat) return;
+        const loc = { name, lngLat, poi: result };
+        if (targetInput === 'from') setFromLocation(loc);
+        else                        setToLocation(loc);
+        closeDropdown();
+      });
+
+      resultsDropdown.appendChild(li);
+    });
+  }
+
+  function extractLngLatFromResult(result) {
+    const coords = result.geometry?.coordinates
+      || result.properties?.coordinates;
+    if (coords && coords.length >= 2)
+      return [coords[0], coords[1]];
+    return null;
+  }
+
+  // ── Input listeners ──────────────────────────────────────────────
+  fromInput.addEventListener('focus', () => { activeInput = 'from'; });
+  toInput.addEventListener('focus',   () => { activeInput = 'to'; });
 
   let debounceTimer;
-
-  input.addEventListener('input', () => {
+  const handleInput = (e, target) => {
     clearTimeout(debounceTimer);
-    const query = input.value.trim();
+    const query = e.target.value.trim();
+    debounceTimer = setTimeout(() => runSearch(query, target), 300);
+  };
 
-    if (query.length < 2) {
-      results?.classList.remove('active');
+  fromInput.addEventListener('input', (e) => handleInput(e, 'from'));
+  toInput.addEventListener('input',   (e) => handleInput(e, 'to'));
+
+  // Clear location state when user edits the text manually
+  fromInput.addEventListener('input', () => { fromLocation = null; refreshDirectionsBtn(); });
+  toInput.addEventListener('input',   () => { toLocation   = null; refreshDirectionsBtn(); });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) closeDropdown();
+  });
+
+  // ── Use My Location ──────────────────────────────────────────────
+  useLocationBtn?.addEventListener('click', async () => {
+    fromInput.value = 'Locating…';
+    fromInput.disabled = true;
+    try {
+      const pos = await new Promise((resolve, reject) =>
+        navigator.geolocation.getCurrentPosition(
+          p => resolve([p.coords.longitude, p.coords.latitude]),
+          reject,
+          { enableHighAccuracy: true, timeout: 8000 }
+        )
+      );
+      setFromLocation({ name: 'My Location', lngLat: pos });
+      showToast('Using your GPS location as start', 'success', 2000);
+    } catch {
+      fromInput.value = '';
+      showToast('Could not get GPS location', 'error', 2500);
+    } finally {
+      fromInput.disabled = false;
+    }
+  });
+
+  // ── Swap ─────────────────────────────────────────────────────────
+  swapBtn?.addEventListener('click', () => {
+    [fromLocation, toLocation] = [toLocation, fromLocation];
+    fromInput.value = fromLocation?.name || '';
+    toInput.value   = toLocation?.name   || '';
+    refreshDirectionsBtn();
+  });
+
+  // ── Get Directions ───────────────────────────────────────────────
+  getDirectionsBtn?.addEventListener('click', async () => {
+    if (!toLocation) return;
+
+    // If no from location is set, resolve via GPS/map centre (existing logic)
+    if (!fromLocation) {
+      await navigationController.startNavigationToPoi({
+        poi: toLocation.poi,
+        destinationName: toLocation.name,
+      });
       return;
     }
 
-    debounceTimer = setTimeout(async () => {
-      try {
-        const pois = await fetchPOIs(query);
-        renderResults(pois, query);
-      } catch (error) {
-        console.error('Search input error:', error);
-      }
-    }, 350);
-  });
-
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      clearTimeout(debounceTimer);
-      const query = input.value.trim();
-      if (query) {
-        fetchPOIs(query).then((pois) => renderResults(pois, query)).catch(() => {});
-      }
-    }
-
-    if (event.key === 'Escape') {
-      results?.classList.remove('active');
+    // Manual from — inject it into the route plan directly
+    const plan = await navigationController.createRoutePlanFromTo({
+      fromLngLat: fromLocation.lngLat,
+      poi: toLocation.poi,
+      destinationName: toLocation.name,
+    });
+    if (plan) {
+      await navigationController.startNavigationToPoi({
+        poi: toLocation.poi,
+        destinationName: toLocation.name,
+        plan,
+      });
     }
   });
+}
 
-  button?.addEventListener('click', () => {
-    const query = input.value.trim();
-    if (query) {
-      fetchPOIs(query).then((pois) => renderResults(pois, query)).catch(() => {});
-    }
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!event.target.closest('.search-container')) {
-      results?.classList.remove('active');
-    }
-  });
+function setupSearch() {
+  // Original setupSearch replaced by initRoutePlanner
 }
 
 function setupPanels() {
@@ -687,7 +812,7 @@ function escapeHtml(value) {
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
-  setupSearch();
+  // setupSearch is now integrated into initRoutePlanner called on map load
   setupPanels();
   setupOnboarding();
 });

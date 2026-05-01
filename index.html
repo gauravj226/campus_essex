@@ -31,22 +31,52 @@
     </div>
   </header>
 
-  <div class="search-container">
-    <div class="search-wrapper">
+<div class="search-container">
+  <div class="route-planner-panel">
+
+    <!-- FROM row -->
+    <div class="rp-row" id="rp-from-row">
+      <span class="rp-dot rp-dot--from"></span>
       <input
         type="text"
-        id="search-input"
-        class="search-input"
-        placeholder="Where do you want to go? (e.g., 'library', 'computer lab', 'nearest coffee')"
-        aria-label="Search campus locations"
+        id="from-input"
+        class="rp-input"
+        placeholder="From: your location"
         autocomplete="off"
+        aria-label="Starting location"
       >
-      <button id="search-btn" class="search-btn" aria-label="Search">
-        <span class="icon">&#128269;</span>
-      </button>
+      <button id="use-location-btn" class="rp-icon-btn" title="Use my GPS location" aria-label="Use my GPS location">📍</button>
     </div>
-    <div id="search-results" class="search-results" role="listbox" aria-label="Search results"></div>
+
+    <!-- Connector + Swap -->
+    <div class="rp-connector">
+      <span class="rp-line"></span>
+      <button id="swap-btn" class="rp-swap-btn" title="Swap from and to" aria-label="Swap from and to">⇅</button>
+    </div>
+
+    <!-- TO row -->
+    <div class="rp-row" id="rp-to-row">
+      <span class="rp-dot rp-dot--to"></span>
+      <input
+        type="text"
+        id="to-input"
+        class="rp-input"
+        placeholder="To: search a building or room..."
+        autocomplete="off"
+        aria-label="Destination"
+      >
+      <button id="search-btn" class="rp-icon-btn" aria-label="Search">🔍</button>
+    </div>
+
+    <!-- Directions button -->
+    <button id="get-directions-btn" class="get-directions-btn" disabled>
+      Get Directions
+    </button>
   </div>
+
+  <!-- Shared dropdown for both inputs -->
+  <div id="search-results" class="search-results" role="listbox" aria-label="Search results"></div>
+</div>
 
   <div class="map-container">
     <div id="map" style="width: 100%; height: 100%;"></div>

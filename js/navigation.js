@@ -178,6 +178,49 @@ class NavigationController {
     };
   }
 
+  // Variant of createRoutePlanToPoi that accepts an explicit from position
+  async createRoutePlanFromTo({ fromLngLat, poi, destinationName }) {
+    const destination = this.extractPoiLngLat(poi);
+    if (!destination) {
+      this.showToast('Destination coordinates unavailable', 'error');
+      return null;
+    }
+
+    const from = normalizePoint(fromLngLat);
+    if (!from) {
+      this.showToast('Invalid starting location', 'error');
+      return null;
+    }
+
+    await loadLandmarks();
+
+    const straightDistance = haversineDistanceMeters(from, destination);
+    let routePoints = straightDistance <= 5
+      ? [from, destination]
+      : await this.calculateRoute(from, destination);
+
+    if (!routePoints.length) {
+      routePoints = this.buildDirectFallbackRoute(from, destination);
+      this.showToast('Using simple guidance route.', 'info', 2000);
+    }
+    if (!routePoints.length) return null;
+
+    const name = destinationName || poi?.properties?.title || 'Destination';
+    const instructions  = this.buildHumanizedInstructions(routePoints, name, poi, this.lastRawTrip);
+    const distanceMeters = cumulativeDistanceMeters(routePoints);
+    const etaMinutes    = estimateWalkTimeMinutes(distanceMeters);
+
+    return {
+      from,
+      destination: { name, lngLat: destination, poi },
+      routePoints,
+      instructions,
+      distanceMeters,
+      etaMinutes,
+      rawTrip: this.lastRawTrip,
+    };
+  }
+
   async previewRouteToPoi({ poi, destinationName }) {
     let plan = null;
     try {

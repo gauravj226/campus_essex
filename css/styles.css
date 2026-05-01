@@ -1076,3 +1076,100 @@ body{
     max-height: 34vh;
   }
 }
+
+/* ── Route Planner Panel ─────────────────────────────────────── */
+.route-planner-panel {
+  background: #fff;
+  border-radius: 14px;
+  padding: 10px 12px 8px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.rp-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rp-dot--from { background: #4CAF50; border: 2px solid #388E3C; }
+.rp-dot--to   { background: #F44336; border: 2px solid #C62828; }
+
+.rp-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  padding: 6px 4px;
+  background: transparent;
+  color: #1a1a1a;
+}
+.rp-input::placeholder { color: #aaa; }
+.rp-input:focus { border-bottom: 2px solid #00467F; }
+
+.rp-icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.rp-icon-btn:hover { background: #f0f0f0; }
+
+.rp-connector {
+  display: flex;
+  align-items: center;
+  padding: 0 0 0 5px;
+  gap: 8px;
+}
+.rp-line {
+  width: 2px;
+  height: 18px;
+  background: #ddd;
+  margin-left: 5px;
+}
+.rp-swap-btn {
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.2s;
+  margin-left: auto;
+}
+.rp-swap-btn:hover { background: #e8f0fe; transform: rotate(180deg); }
+
+.get-directions-btn {
+  margin-top: 8px;
+  width: 100%;
+  background: #00467F;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s;
+}
+.get-directions-btn:hover:not(:disabled) { background: #005fa3; }
+.get-directions-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Active input highlight */
+.rp-row--active .rp-input { border-bottom: 2px solid #00467F; }
