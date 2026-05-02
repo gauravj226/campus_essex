@@ -298,10 +298,8 @@ class NavigationController {
           const trip = await Mazemap.Data.getAtoBTrip({
             mode: 'PEDESTRIAN',
             campusId: 2195,
-            fromLngLatZ: { lng: from[0], lat: from[1], zLevel: currentZLevel },
-            toLngLatZ:   { lng: to[0],   lat: to[1],   zLevel: currentZLevel },
-          });
-          if (trip?.geometry) {
+        fromLngLatZ: `${from[0]},${from[1]},${currentZLevel}`,            toLngLatZ:   { lng: to[0],   lat: to[1],   zLevel: currentZLevel },
+        toLngLatZ: `${to[0]},${to[1]},${currentZLevel}`,          if (trip?.geometry) {
             this.lastRawTrip = trip;
             const normalized = normalizeRoutePoints(trip);
             if (normalized.length > 1) return normalized;
